@@ -5,44 +5,74 @@ from gym.utils import seeding
 import numpy as np
 import random as rd
 
-def quantize(x, n_div, mini, maxi):
-    y = (x - mini) / (maxi - mini)
-    y = min(0.99, max(0, y))
-    return int(y * n_div)
-
-class RandomCollecting():
-    def new_episode(self, obs):
-        return
-
+class Stats():
     def __init__(self):
-        self.obs = []
+        self.stats = []
+
+    def addEpisode(self, total_reward):
+        self.stats.append(total_reward)
+
+    def print(self, n = 100):
+        l = self.stats[len(self.stats) - n:]
+        print("Current average:", sum(l) / len(l))
+
+class Agent():
+    def __init__(self):
+        pass
+
+    def new_episode(self, obs):
+        pass
 
     def act(self, obs):
         return rd.randint(0, 1)
 
     def update(self, obs, reward, done):
-        self.obs.append(obs)
+        pass
 
-class AgentLearner():
+class Controller():
+    def __init__(self, env, agent):
+        self.env = env
+        self.agent = agent
+        self.stats = Stats()
 
-    def new_episode(self, obs):
-        print("NEW")
+    def run_episode(self, render = True):
+        observation = env.reset()
+        self.agent.new_episode(observation)
+        t = 0
+        done = False
+        total_reward = 0
+        while not done:
+            t += 1
+            if render:
+                env.render()
+            action = self.agent.act(observation)
+            observation, reward, done, info = env.step(action)
+            total_reward += reward
+            self.agent.update(observation, reward, done)
+        print("Episode finished after {} timesteps".format(t+1))
+        self.stats.addEpisode(total_reward)
+        self.stats.print()
+
+    def run_episodes(self, n, render = True):
+        for i in range(n):
+            print("Running episode", i)
+            self.run_episode(render)
+
+def quantize(x, n_div, mini, maxi):
+    y = (x - mini) / (maxi - mini)
+    y = min(0.99, max(0, y))
+    return int(y * n_div)
+
+class QLearningAgent(Agent):
+    def new_episode(self, observation):
         a_0 = [x[0] for x in self.q]
         a_1 = [x[1] for x in self.q]
-        print((sum(a_0) + sum(a_1)) / (len(a_0) + len(a_1)))
-        print(min(self.q))
-        print(max(self.q))
+        #print((sum(a_0) + sum(a_1)) / (len(a_0) + len(a_1)))
+        #print(min(self.q))
+        #print(max(self.q))
         #self.q = [[100 for a in range(self.na)] for s in range(self.ns)]
-        self.i += 1
-        return
 
     def __init__(self):
-
-        self.i = 0
-
-        self.n_episodes = 100
-        self.last_episodes = []
-        self.total_reward = 0
 
         self.n_div = 4
         self.mini = [-0.2, -1, -0.25, -2]
@@ -86,82 +116,13 @@ class AgentLearner():
         return a
 
     def update(self, obs, reward, done):
-        self.total_reward += reward
         s = self.discretize(obs)
         if done:
             self.q[self.prev_s][self.prev_a] = (1 - self.alpha) * self.q[self.prev_s][self.prev_a] + self.alpha * reward
-            self.end()
         else:
             self.q[self.prev_s][self.prev_a] = (1 - self.alpha) * self.q[self.prev_s][self.prev_a] + self.alpha * (reward + self.gamma * max(self.q[s]))
 
-    def end(self):
-        self.last_episodes.append(self.total_reward)
-        self.last_episodes = self.last_episodes[len(self.last_episodes) - self.n_episodes:]
-        self.total_reward = 0
-        print("Current average", sum(self.last_episodes) / len(self.last_episodes))
-
-class Agent():
-    def __init__(self):
-
-        self.gravity = 9.8
-        self.masscart = 1.0
-        self.masspole = 0.1
-        self.total_mass = (self.masspole + self.masscart)
-        self.length = 0.5 # actually half the pole's length
-        self.polemass_length = (self.masspole * self.length)
-        self.force_mag = 10.0
-        self.tau = 0.02  # seconds between state updates
-
-        self.x = None
-        self.x_dot = None
-        self.theta = None
-        self.theta_dot = None
-
-    def distance_to_center(self, x, theta):
-        xx = x.item(0) / 2.4
-        yy = theta / 0.2
-        return xx * xx + yy * yy
-
-    def simulate(self, action):
-        force = self.force_mag if action==1 else -self.force_mag
-        costheta = math.cos(self.theta)
-        sintheta = math.sin(self.theta)
-        temp = (force + self.polemass_length * self.theta_dot * self.theta_dot * sintheta) / self.total_mass
-        thetaacc = (self.gravity * sintheta - costheta* temp) / (self.length * (4.0/3.0 - self.masspole * costheta * costheta / self.total_mass))
-        xacc  = temp - self.polemass_length * thetaacc * costheta / self.total_mass
-        x  = self.x + self.tau * self.x_dot
-        x_dot = self.x_dot + self.tau * xacc
-        theta = self.theta + self.tau * self.theta_dot
-        theta_dot = self.theta_dot + self.tau * thetaacc
-        return (x, x_dot, theta, theta_dot)
-
-    def act(self, obs):
-
-        (x_0, x_dot_0, theta_0, theta_dot_0) = self.simulate(0)
-        (x_1, x_dot_1, theta_1, theta_dot_1) = self.simulate(1)
-
-        x0 = x_0 + self.tau * x_dot_0
-        theta0 = theta_0 + self.tau * theta_dot_0
-
-        x1 = x_1 + self.tau * x_dot_1
-        theta1 = theta_1 + self.tau * theta_dot_1
-
-        d0 = self.distance_to_center(x0, theta0)
-        d1 = self.distance_to_center(x1, theta1)
-
-        if d0 < d1:
-            return 0
-        else:
-            return 1
-
-    def update(self, obs, reward, done):
-        self.x, self.x_dot, self.theta, self.theta_dot = obs
-
-    def new_episode(self, obs):
-        self.x, self.x_dot, self.theta, self.theta_dot = obs
-
-class LinearAgent():
-
+class LinearAgent(Agent):
     def __init__(self):
 
         gravity = 9.8
@@ -190,9 +151,6 @@ class LinearAgent():
             [0, 0, theta_theta, 1]
         ])
         self.B = np.matrix([0, a_x, 0, a_theta]).T
-
-        print("A", self.A)
-        print("B", self.B)
 
         self.X = np.zeros([4, 1])
         self.measured_X = np.zeros([4, 1])
@@ -226,13 +184,10 @@ class LinearAgent():
 
     def rectify(self):
 
-        print("COMPARISON")
         a = self.X.item(1)
         b = self.measured_X.item(1)
-        print(abs(a  - b))
         a = self.X.item(3)
         b = self.measured_X.item(3)
-        print(abs(a - b))
 
     def update(self, obs, reward, done):
         self.measured_X = np.matrix(obs).T
@@ -241,7 +196,7 @@ class LinearAgent():
     def new_episode(self, obs):
         self.measured_X = np.matrix(obs).T
 
-class LearningLinearAgent():
+class LearningLinearAgent(Agent):
     def __init__(self):
 
         self.n = 4
@@ -294,8 +249,6 @@ class LearningLinearAgent():
             p = np.linalg.lstsq(self.x.T, self.y.T)[0]
             self.A = p[:-1].T
             self.B = p[-1].T
-            print(self.A)
-            print(self.B)
         self.measured_X = Y
 
     def new_episode(self, obs):
@@ -303,22 +256,14 @@ class LearningLinearAgent():
         self.X = None
 
 env = gym.make('CartPole-v0')
-a = AgentLearner()
 #a = LinearAgent()
 #a = LearningLinearAgent()
 #a = Agent()
 #a = RandomCollecting()
 
-for i_episode in range(100000):
-    observation = env.reset()
-    a.new_episode(observation)
-    t = 0
-    while True:
-        t += 1
-        env.render()
-        action = a.act(observation)
-        observation, reward, done, info = env.step(action)
-        a.update(observation, reward, done)
-        if done:
-            print("Episode finished after {} timesteps".format(t+1))
-            break
+a = Controller(env, QLearningAgent())
+b = Controller(env, LinearAgent())
+c = Controller(env, LearningLinearAgent())
+a.run_episodes(5)
+b.run_episodes(5)
+c.run_episodes(5)
