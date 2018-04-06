@@ -31,6 +31,7 @@ class Controller():
             observation, reward, done, info = self.env.step(action)
             total_reward += reward
             self.agent.update(observation, reward, done)
+        self.agent.end_episode()
         print("Episode finished after {} timesteps".format(t+1))
         self.stats.addEpisode(total_reward)
         self.stats.print()

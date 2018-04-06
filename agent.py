@@ -8,5 +8,8 @@ class Agent():
     def act(self, obs):
         return rd.randint(0, 1)
 
+    def end_episode(self):
+        pass
+
     def update(self, obs, reward, done):
         pass
