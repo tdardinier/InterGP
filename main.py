@@ -14,6 +14,6 @@ b = Controller(env, agent_b)
 c = Controller(env, agent_c)
 #ra = a.run_episodes(1000)
 #rb = b.run_episodes(1000)
-#rc = c.run_episodes(1000)
+rc = c.run_episodes(1000)
 
 #env.close()

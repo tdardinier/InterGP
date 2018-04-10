@@ -28,20 +28,20 @@ class LearningLinearAgent(agent.Agent):
         self.actions = [0, 1]
 
         self.P = []
-        self.P[0] = np.identity(self.ns)
-        self.P[1] = np.identity(self.ns)
+        self.P.append(np.identity(self.ns))
+        self.P.append(np.identity(self.ns))
 
-        self.done = np.zeros([self.ns, 1])
+        self.p_done = np.zeros([self.ns, 1])
         n_done = 100.
         incr_done = 1. / n_done
         for s in range(self.ns):
-            for _ in range(n_done):
+            for _ in range(int(n_done)):
                 x = self.quantizer.undiscretizeRandom(s)
                 if self.done(x):
-                    self.done[s] += incr_done
+                    self.p_done[s] += incr_done
 
         self.gamma = 0.99
-        self.values = [1. / (1. - self.gamma) for x in range(self.ns)]
+        self.q = [[1. / (1. - self.gamma) for _ in self.actions] for x in range(self.ns)]
 
         self.n = 4
         self.x = np.zeros([self.n + 1, 0])
@@ -54,10 +54,7 @@ class LearningLinearAgent(agent.Agent):
         self.measured_X = None
         self.last_action = None
 
-        self.alpha = 0.1
-        self.n_iterations = 5
-        self.n_approx = 10
-
+        self.n_approx = 20
         self.H = 20
 
     def done(self, state):
@@ -74,15 +71,14 @@ class LearningLinearAgent(agent.Agent):
         if done:
             return 1
         else:
-            return 1 + self.gamma * self.values[s]
+            return 1 + self.gamma * max(self.q[s])
 
     def getValueState(self, s):
-        s = self.quantizer.discretize(x)
-        return 1 + (1 - self.done[s]) * self.gamma * self.values[s]
+        return 1 + (1 - self.p_done[s]) * self.gamma * max(self.q[s])
 
     def updateTransitionMatrix(self, a):
         self.P[a] = 0.5 * self.P[a]
-        incr = 0.5 / self.ns
+        incr = 0.5 / self.n_approx
         for s in range(self.ns):
             for _ in range(self.n_approx):
                 x = np.matrix(self.quantizer.undiscretizeRandom(s)).T
@@ -95,28 +91,24 @@ class LearningLinearAgent(agent.Agent):
         epsilon = 1.
         delta = epsilon
         i = 0
-        while delta >= epsilon and i < self.n_iterations:
+        while delta >= epsilon:
             i += 1
-            print("Iteration", i, "delta =", delta, ", max =", max(self.values), ", min =",
-                  min(self.values))
+            print("Iteration", i, "delta =", delta, ", max =", max(self.q), ", min =",
+                  min(self.q))
             delta = 0
             indices = np.arange(self.ns)
             np.random.shuffle(indices)
             l = []
             for s in indices:
                 for a in self.actions:
-                    add = 0.0
+                    v = 0.0
                     for ss in range(self.ns):
                         pss = self.P[a][s][ss]
                         if pss > 0:
-                            add += pss * ( self.values[]
-
-                        l.append(max(v0, v1))
-
-                v = self.values[s]
-                new_v = sum(l) / self.n_approx
-                self.values[s] = (1 - self.alpha) * v + self.alpha * new_v
-                delta = max(delta, abs(v - self.values[s]))
+                            v += pss * self.getValueState(ss)
+                    old_v = self.q[s][a]
+                    self.q[s][a] = self.p_done[s] +  (1 - self.p_done[s]) * v
+                    delta = max(delta, abs(old_v - self.q[s][a]))
 
     #def distance_to_center(self, X):
     #    xx = X.item(0) / 2.4
@@ -181,6 +173,18 @@ class LearningLinearAgent(agent.Agent):
         return a
 
     def act(self, obs):
+        x = self.convert_obs(obs)
+        s = self.quantizer.discretize(x)
+        v0 = self.q[s][0]
+        v1 = self.q[s][1]
+        a = 0
+        if v1 > v0:
+            a = 1
+        self.last_action = 2 * a - 1
+        self.X = self.simulate(x, a)
+        return a
+
+    def oldAct(self, obs):
 
         x0 = self.simulate(self.measured_X, 0)
         s0 = self.quantizer.discretize(x0)
@@ -203,8 +207,11 @@ class LearningLinearAgent(agent.Agent):
 
         return a
 
+    def convert_obs(self, obs):
+        return np.matrix(obs).T
+
     def update(self, obs, reward, done):
-        Y = np.matrix(obs).T
+        Y = self.convert_obs(obs)
         if not (self.X is None):
             X = self.measured_X
             X = np.vstack([X, self.last_action])
