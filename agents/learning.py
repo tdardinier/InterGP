@@ -28,11 +28,12 @@ class LearningAgent(agent.Agent):
         self.actions = []
         self.rewards = []
 
-        self.n_div = 4
-        self.mini = [-0.2, -1, -0.25, -2]
-        self.maxi = [0.2, 1, 0.25, 2]
+        n_div = 4
+        mini = [-0.2, -1, -0.25, -2]
+        maxi = [0.2, 1, 0.25, 2]
+        self.quantizer = tools.Quantizer(n_div, mini, maxi)
 
-        self.ns = self.n_div ** 4
+        self.ns = n_div ** 4
         self.na = 2
 
         self.alpha = alpha
@@ -48,11 +49,8 @@ class LearningAgent(agent.Agent):
 
         self.q = [[200 for a in range(self.na)] for s in range(self.ns)]
 
-    def quantize(self, obs):
-        return tools.discretize(obs, self.n_div, self.mini, self.maxi)
-
     def new_episode(self, obs):
-        self.states = [self.quantize(obs)]
+        self.states = [self.quantizer.discretize(obs)]
         self.actions = []
         self.rewards = []
 
@@ -69,7 +67,7 @@ class LearningAgent(agent.Agent):
 
     def act(self, obs):
 
-        s = self.quantize(obs)
+        s = self.quantizer.discretize(obs)
         a = None
 
         if self.exploration_type == ExplorationType.EPSILON:
@@ -94,7 +92,7 @@ class LearningAgent(agent.Agent):
 
     def update(self, obs, reward, done):
 
-        s = self.quantize(obs)
+        s = self.quantizer.discretize(obs)
 
         self.states.append(s)
         self.rewards.append(reward)

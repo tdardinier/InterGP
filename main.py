@@ -4,12 +4,16 @@ from agents import learning, linear
 
 env = gym.make('CartPole-v0')
 
-a = learning.LearningAgent(learning_type = learning.LearningType.MONTECARLO)
-ca = Controller(env, a)
-b = Controller(env, linear.LearningLinearAgent())
-ca.run_episodes(1000, False)
-#ca.exploration_type = learning.ExplorationType.OPTIMAL
-ca.run_episodes(1000, True)
-b.run_episodes(5, False)
+p_noise = 0.1
 
-env.close()
+agent_a = learning.LearningAgent(learning_type = learning.LearningType.MONTECARLO)
+agent_b = learning.LearningAgent(learning_type = learning.LearningType.QLEARNING)
+agent_c = linear.LearningLinearAgent()
+a = Controller(env, agent_a)
+b = Controller(env, agent_b)
+c = Controller(env, agent_c)
+#ra = a.run_episodes(1000)
+#rb = b.run_episodes(1000)
+#rc = c.run_episodes(1000)
+
+#env.close()

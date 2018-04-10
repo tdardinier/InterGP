@@ -1,8 +1,47 @@
 import numpy as np
 import agent
+import math
+import tools
+import random as rd
 
 class LearningLinearAgent(agent.Agent):
+
     def __init__(self):
+
+        self.theta_threshold = 12 * 2 * math.pi / 360
+        self.x_threshold = 2.4
+
+        n_div = 6
+
+        #mini = [-0.2, -1, -0.25, -2]
+        #maxi = [0.2, 1, 0.25, 2]
+
+        x_max = tools.getMax(self.x_threshold, n_div)
+        theta_max = tools.getMax(self.theta_threshold, n_div)
+
+        mini = [-x_max, -1, -theta_max, -2]
+        maxi = [x_max, 1, theta_max, 2]
+
+        self.quantizer = tools.Quantizer(n_div, mini, maxi)
+
+        self.ns = n_div ** 4
+        self.actions = [0, 1]
+
+        self.P = []
+        self.P[0] = np.identity(self.ns)
+        self.P[1] = np.identity(self.ns)
+
+        self.done = np.zeros([self.ns, 1])
+        n_done = 100.
+        incr_done = 1. / n_done
+        for s in range(self.ns):
+            for _ in range(n_done):
+                x = self.quantizer.undiscretizeRandom(s)
+                if self.done(x):
+                    self.done[s] += incr_done
+
+        self.gamma = 0.99
+        self.values = [1. / (1. - self.gamma) for x in range(self.ns)]
 
         self.n = 4
         self.x = np.zeros([self.n + 1, 0])
@@ -15,30 +54,150 @@ class LearningLinearAgent(agent.Agent):
         self.measured_X = None
         self.last_action = None
 
-    def distance_to_center(self, X):
-        xx = X.item(0) / 2.4
-        yy = X.item(2) / 0.2
-        return xx * xx + yy * yy
+        self.alpha = 0.1
+        self.n_iterations = 5
+        self.n_approx = 10
+
+        self.H = 20
+
+    def done(self, state):
+        x = state[0]
+        theta = state[2]
+        return x < -self.x_threshold \
+                or x > self.x_threshold \
+                or theta < -self.theta_threshold \
+				or theta > self.theta_threshold
+
+    def getValue(self, x):
+        done = self.done(x)
+        s = self.quantizer.discretize(x)
+        if done:
+            return 1
+        else:
+            return 1 + self.gamma * self.values[s]
+
+    def getValueState(self, s):
+        s = self.quantizer.discretize(x)
+        return 1 + (1 - self.done[s]) * self.gamma * self.values[s]
+
+    def updateTransitionMatrix(self, a):
+        self.P[a] = 0.5 * self.P[a]
+        incr = 0.5 / self.ns
+        for s in range(self.ns):
+            for _ in range(self.n_approx):
+                x = np.matrix(self.quantizer.undiscretizeRandom(s)).T
+                s_succ = self.quantizer.discretize(self.simulate(x, a))
+                self.P[a][s][s_succ] += incr
+
+    def learn(self):
+        for a in self.actions:
+            self.updateTransitionMatrix(a)
+        epsilon = 1.
+        delta = epsilon
+        i = 0
+        while delta >= epsilon and i < self.n_iterations:
+            i += 1
+            print("Iteration", i, "delta =", delta, ", max =", max(self.values), ", min =",
+                  min(self.values))
+            delta = 0
+            indices = np.arange(self.ns)
+            np.random.shuffle(indices)
+            l = []
+            for s in indices:
+                for a in self.actions:
+                    add = 0.0
+                    for ss in range(self.ns):
+                        pss = self.P[a][s][ss]
+                        if pss > 0:
+                            add += pss * ( self.values[]
+
+                        l.append(max(v0, v1))
+
+                v = self.values[s]
+                new_v = sum(l) / self.n_approx
+                self.values[s] = (1 - self.alpha) * v + self.alpha * new_v
+                delta = max(delta, abs(v - self.values[s]))
+
+    #def distance_to_center(self, X):
+    #    xx = X.item(0) / 2.4
+    #    yy = X.item(2) / 0.2
+    #    return xx * xx + yy * yy
 
     def simulate(self, X, action):
         a = 2 * action - 1
         return self.A * X + a * self.B
 
-    def act(self, obs):
+    def oldEvaluate(self, state, i):
+        if i == 0:
+            return not self.done(state)
+        x0 = self.simulate(state, 0)
+        x1 = self.simulate(state, 1)
+        c0 = (not self.done(x0)) and self.evaluate(x0, i - 1)
+        c = c0 or ((not self.done(x1)) and self.evaluate(x1, i - 1))
+        return c
 
-        X_0 = self.simulate(self.measured_X, 0)
-        XX_0 = self.simulate(X_0, 0)
-        d0 = self.distance_to_center(XX_0)
+    def goodEvaluate(self, state, a, i):
+        if i == 0:
+            return not self.H
+        x = self.simulate(state, a)
+        if self.done(x):
+            return self.H - i
+        return self.evaluate(x, a, i - 1)
 
-        X_1 = self.simulate(self.measured_X, 1)
-        XX_1 = self.simulate(X_1, 1)
-        d1 = self.distance_to_center(XX_1)
+    def evaluate(self, x, i):
+        if i == 0:
+            return self.H
+        if self.done(x):
+            return self.H - i
+        x0 = self.simulate(x, 0)
+        x1 = self.simulate(x, 1)
+        v0 = self.evaluate(x0, i - 1)
+        if v0 == self.H:
+            return v0
+        return max(v0, self.evaluate(x1, i - 1))
+
+    def actSimulate(self, obs):
+
+        x0 = self.simulate(self.measured_X, 0)
+        x1 = self.simulate(self.measured_X, 1)
+
+        v0 = self.evaluate(x0, self.H)
+        v1 = self.evaluate(x1, self.H)
+
+        #print(v0, v1)
 
         a = 0
-        self.X = X_0
-        if d0 > d1:
+        self.X = self.simulate(self.measured_X, 0)
+        if v1 > v0:
             a = 1
-            self.X = X_1
+        elif v1 == v0:
+            a = rd.randint(0, 1)
+
+        if a == 1:
+            self.X = self.simulate(self.measured_X, 0)
+
+        self.last_action = 2 * a - 1
+
+        return a
+
+    def act(self, obs):
+
+        x0 = self.simulate(self.measured_X, 0)
+        s0 = self.quantizer.discretize(x0)
+        v0 = self.values[s0]
+
+        x1 = self.simulate(self.measured_X, 1)
+        s1 = self.quantizer.discretize(x1)
+        v1 = self.values[s1]
+
+        a = 0
+        self.X = x0
+        #print(s0, s1)
+        #print(self.done(x0), self.done(x1))
+        #print(v0, v1)
+        if v1 > v0:
+            a = 1
+            self.X = x1
 
         self.last_action = 2 * a - 1
 
@@ -59,3 +218,6 @@ class LearningLinearAgent(agent.Agent):
     def new_episode(self, obs):
         self.measured_X = np.matrix(obs).T
         self.X = None
+
+    def end_episode(self):
+        self.learn()
