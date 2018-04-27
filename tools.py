@@ -1,5 +1,45 @@
 import math
 import random as rd
+import scipy.linalg
+import numpy as np
+
+
+class LQR():
+
+    def update(self, A, B, Q, N):
+        self.A = A
+        self.B = B
+        self.Q = Q
+        self.N = N
+
+    def __init__(self, A, B, Q, N):
+        self.update(A, B, Q, N)
+
+        self.P = []
+
+    def computeP(self, P):
+        new_P = self.A.T * P * self.A
+        a = self.A.T * P * self.B
+        b = self.B.T * P * self.B
+        c = self.B.T * P * self.A
+        # print(self.B)
+        # print(P)
+        # print(b)
+        inv_b = scipy.linalg.inv(b)
+        new_P -= a * inv_b * c
+        new_P += self.Q
+        return new_P
+
+    def solve(self, x):
+        current_P = self.Q
+        for i in range(self.N):
+            current_P = self.computeP(current_P)
+            self.P.append(current_P)
+        F = scipy.linalg.inv(self.B.T * current_P * self.B) * (self.B.T * current_P * self.A)
+        return - F * x
+
+
+
 
 class Quantizer():
 

@@ -54,7 +54,7 @@ class LearningAgent(agent.Agent):
         self.actions = []
         self.rewards = []
 
-    def end_episode(self):
+    def end_episode(self, score):
         if self.learning_type == LearningType.MONTECARLO:
             csum = 0.0
             for i in range(len(self.rewards) - 1, -1, -1):
