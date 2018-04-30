@@ -40,6 +40,7 @@ def cartpole():
     )
     ctl = ctrl.Controller(env, agent)
     results = ctl.run_episodes(1000)
+    env.close()
     return results
 
 
@@ -72,6 +73,7 @@ def pendulum():
     )
     ctl = ctrl.Controller(env, agent)
     results = ctl.run_episodes(1000)
+    env.close()
     return results
 
 
@@ -99,28 +101,13 @@ def moutainContinuousCar():
     )
     ctl = ctrl.Controller(env, agent)
     results = ctl.run_episodes(1000)
+    env.close()
     return results
 
 
-def car():
-
-    def car_score(x):
-        return -x.item(0)
-
-    car_env = gym.make('MountainCar-v0')
-    car_agent = linear.LinearAgent(
-        n=2,
-        actions=[0, 1, 2],
-        score_function=car_score,
-    )
-    car_ctrl = ctrl.Controller(car_env, car_agent)
-    car_ctrl.run_episodes(5)
-    car_env.close()
-
-
-pendulum()
-moutainContinuousCar()
-cartpole()
+# pendulum()
+# moutainContinuousCar()
+# cartpole()
 
 # p_noise = 0.1
 # agent_a = learning.LearningAgent(
