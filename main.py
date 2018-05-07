@@ -1,11 +1,37 @@
 import gym
 import controller as ctrl
-from agents import linear
+from agents import linear, random
 import numpy as np
 import random as rd
 
+cartpole = "CartPole-v1"
+pendulum = 'Pendulum-v0'
+moutain_car_continuous = 'MountainCarContinuous-v0'
+moutain_car = 'MountainCar-v0'
 
-def cartpole():
+reacher = "Reacher-v2"
+swimmer = "Swimmer-v2"
+hopper = "Hopper-v2"
+humanoid = "Humanoid-v2"
+ant = "Ant-v2"
+cheetah = "HalfCheetah-v2"
+double_pendulum = "InvertedDoublePendulum-v2"
+
+
+def agentRandom(name, N=100000000000, render=True, default_state=None):
+    if default_state is None:
+        env = gym.make(name)
+    else:
+        env = gym.make(name, default_state)
+    m = 1
+    for x in env.action_space.shape:
+        m *= x
+    a = random.Random(env.action_space.sample, env.observation_space.shape[0], m)
+    c = ctrl.Controller(env, a)
+    c.run_episodes(N, render=render)
+
+
+def agentCartpole():
 
     c_x = 1  # 2.4
     c_theta = 0.2  # 0.2
@@ -44,7 +70,7 @@ def cartpole():
     return results
 
 
-def pendulum():
+def agentPendulum():
 
     Q = np.diag([1, 0, 0])
 
