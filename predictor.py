@@ -48,28 +48,29 @@ class Predictor():
         # self.rX = tf.reshape(self.X, [self.n, -1])
         self.rX = tf.reshape(tf.transpose(self.X, perm=[1, 2, 0]), [self.n, -1])
         # self.rU = tf.reshape(self.U, [-1, self.m, 1])
-        self.rY = tf.reshape(self.Y, [self.n, -1])
+        # self.rY = tf.reshape(self.Y, [self.n, -1])
+        self.rY = tf.reshape(tf.transpose(self.Y, perm=[1, 2, 0]), [self.n, -1])
 
         self.Wha = self.randomVar(self.k, self.n, name="Wha")
         self.Bha = self.randomVar(self.k, 1, name="Bha")
-        # self.Ha = tf.nn.relu(self.Wha @ self.rX + self.Bha, name="Ha")
-        self.Ha = tf.nn.relu(self.Wha @ self.rX, name="Ha")
+        self.Ha = tf.nn.relu(self.Wha @ self.rX + self.Bha, name="Ha")
+        # self.Ha = tf.nn.relu(self.Wha @ self.rX, name="Ha")
 
         self.Wa = self.randomVar(self.n, self.k, name="Wa")
         self.Ba = self.randomVar(self.n, 1, name="Ba")
-        # self.A = self.Wa @ self.Ha + self.Ba
-        self.A = self.Wa @ self.Ha
+        self.A = self.Wa @ self.Ha + self.Ba
+        # self.A = self.Wa @ self.Ha
 
         self.Whw = self.randomVar(self.k, self.n, name="Whw")
         self.Bhw = self.randomVar(self.k, 1, name="Bhw")
-        # self.Hw = tf.nn.relu(self.Wha @ self.rX + self.Bha, name="Hw")
-        self.Hw = tf.nn.relu(self.Wha @ self.rX, name="Hw")
+        self.Hw = tf.nn.relu(self.Wha @ self.rX + self.Bha, name="Hw")
+        # self.Hw = tf.nn.relu(self.Wha @ self.rX, name="Hw")
 
         p = self.n * self.m
         self.Ww = self.randomVar(p, self.k, name="Wa")
         self.Bw = self.randomVar(p, 1, name="Ba")
-        # self.W = self.Ww @ self.Hw + self.Bw
-        self.W = self.Ww @ self.Hw
+        self.W = self.Ww @ self.Hw + self.Bw
+        # self.W = self.Ww @ self.Hw
 
         self.rW = tf.reshape(tf.transpose(self.W), [-1, self.n, self.m])
         self.prod = self.rW @ self.U
@@ -134,9 +135,9 @@ class Predictor():
         _, c = self.sess.run([self.optimizer, self.cost],  feed_dict={self.X: x,  self.U: u, self.Y: y})
         return c
 
-    def train(self, n_epochs = 50, n_max = 1000):
+    def train(self, n_epochs = 100, n_max = 1000):
 
-        BATCH_SIZE = 1
+        BATCH_SIZE = 2
         n = len(self.data_X)
         indices = [i for i in range(n)]
         n = min(n, (n_max // BATCH_SIZE) * BATCH_SIZE)
@@ -182,6 +183,7 @@ class Predictor():
                 rX = self.sess.run(self.rX, feed_dict=d)
                 rY = self.sess.run(self.rY, feed_dict=d)
                 # print("rX", rX)
+                # print("u", u)
                 # print("rY", rY)
                 # print("mult", self.sess.run(self.rW @ self.U, feed_dict=d))
                 # print("out", out)
