@@ -85,7 +85,8 @@ class Predictor():
         self.output = self.A + self.rProd
 
         # Mean squared error
-        self.cost = tf.reduce_mean(tf.pow(self.output - self.rY, 2), name="Cost")
+        # self.cost = tf.reduce_mean(tf.pow(self.output - self.rY, 2), name="Cost")
+        self.cost = tf.reduce_sum(tf.pow(self.output - self.rY, 2), name="Cost")
 
         self.optimizer = tf.train.AdamOptimizer().minimize(self.cost)
 
@@ -135,9 +136,12 @@ class Predictor():
         _, c = self.sess.run([self.optimizer, self.cost],  feed_dict={self.X: x,  self.U: u, self.Y: y})
         return c
 
-    def train(self, n_epochs = 100, n_max = 1000):
+    def train(self, n_epochs = 500, n_max = 10000):
 
-        BATCH_SIZE = 2
+        BATCH_SIZE = 32
+        if rd.random() < 0.5:
+            BATCH_SIZE = 1
+        epsilon = 0.01
         n = len(self.data_X)
         indices = [i for i in range(n)]
         n = min(n, (n_max // BATCH_SIZE) * BATCH_SIZE)
@@ -179,19 +183,27 @@ class Predictor():
                 # print("W", self.sess.run(self.W, feed_dict=d))
                 # print("U", self.sess.run(self.U, feed_dict=d))
 
-                out = self.sess.run(self.output, feed_dict=d)
-                rX = self.sess.run(self.rX, feed_dict=d)
-                rY = self.sess.run(self.rY, feed_dict=d)
-                # print("rX", rX)
                 # print("u", u)
+                # print("rX", rX)
                 # print("rY", rY)
-                # print("mult", self.sess.run(self.rW @ self.U, feed_dict=d))
                 # print("out", out)
+                # print("mult", self.sess.run(self.rW @ self.U, feed_dict=d))
 
                 _, c = self.sess.run([self.optimizer, self.cost], feed_dict=d)
                 cost += c
 
+                d = {self.X: [x[0]], self.U: [u[0]], self.Y: [y[0]]}
+
+                out = self.sess.run(self.output, feed_dict=d)
+                rX = self.sess.run(self.rX, feed_dict=d)
+                rY = self.sess.run(self.rY, feed_dict=d)
+                # print("rX", rX)
+                # print("out", out)
+                # print("rY", rY)
+
             print("EPOCH:", epoch, ", COST:", cost)
+            if cost < epsilon:
+                break
 
     def evaluate(self, x, u):
         return self.sess.run(self.output, feed_dict={self.X: [x], self.U: [u]})[0]
