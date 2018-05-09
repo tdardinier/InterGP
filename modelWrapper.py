@@ -1,6 +1,6 @@
 import numpy as np
 import agent
-from predictors import predictor, fullPredictor
+from predictors import linearPredictor, fullPredictor
 import replayBuffer as rb
 
 use_full = True
@@ -20,10 +20,10 @@ class modelWrapper(agent.Agent):
         self.use_full = use_full
         self.train = train
 
-        self.p = predictor.Predictor(n=n, m=m)
         self.buf = rb.ReplayBuffer()
         self.filename = filename
 
+        self.p = linearPredictor.Predictor(n=n, m=m)
         if use_full:
             self.p = fullPredictor.predictor(n=n, m=m)
         self.X = None

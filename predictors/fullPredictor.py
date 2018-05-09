@@ -2,23 +2,24 @@ import tensorflow as tf
 import numpy as np
 import random as rd
 import math
+import predictor
 
 nrd = np.random
 
 
-class predictor():
+class Predictor(predictor.Predictor):
 
-    def randomVar(self, n = 1, m = 1, name = "Undefined"):
+    def __randomVar(self, n = 1, m = 1, name = "Undefined"):
         init = tf.random_uniform(shape=[n, m])
         return tf.Variable(init)
 
-    def createHidden(self, inp, a, b, name = "Undefined"):
-        W = self.randomVar(b, a, name=name + "W")
-        B = self.randomVar(b, 1, name=name + "B")
+    def __createHidden(self, inp, a, b, name = "Undefined"):
+        W = self.__randomVar(b, a, name=name + "W")
+        B = self.__randomVar(b, 1, name=name + "B")
         H = tf.nn.relu(W @ inp + B, name=name + "H")
         return W, B, H
 
-    def createNetwork(self):
+    def __createNetwork(self):
 
         def addHidden(w, b, h):
             self.hiddenW.append(w)
@@ -29,7 +30,6 @@ class predictor():
         self.U = tf.placeholder("float", shape=(None, self.m, 1), name="U")
         self.Y = tf.placeholder("float", shape=(None, self.n, 1), name="Y")
 
-        # self.rX = tf.reshape(self.X, [self.n, -1])
         self.rX = tf.reshape(tf.transpose(self.X, perm=[1, 2, 0]), [self.n, -1])
         self.rU = tf.reshape(tf.transpose(self.U, perm=[1, 2, 0]), [self.m, -1])
 
@@ -49,17 +49,17 @@ class predictor():
         if self.use_squared:
             somme += self.n
 
-        (w, b, h) = self.createHidden(self.x, somme, self.k, "hidden0")
+        (w, b, h) = self.__createHidden(self.x, somme, self.k, "hidden0")
         addHidden(w, b, h)
         inp = h
 
         for i in range(self.n_layers - 1):
-            (w, b, h) = self.createHidden(inp, self.k, self.k, "hidden" + str(i + 1))
+            (w, b, h) = self.__createHidden(inp, self.k, self.k, "hidden" + str(i + 1))
             inp = h
             addHidden(w, b, h)
 
-        self.w = self.randomVar(self.n, self.k, name="W")
-        self.b = self.randomVar(self.n, 1, name="B")
+        self.w = self.__randomVar(self.n, self.k, name="W")
+        self.b = self.__randomVar(self.n, 1, name="B")
         self.output = self.w @ inp + self.b
 
         self.cost = tf.reduce_mean(tf.pow(self.output - self.rY, 2), name="Cost")
@@ -68,9 +68,7 @@ class predictor():
 
         # Initialize the variables (i.e. assign their default value)
         init = tf.global_variables_initializer()
-
         self.sess = tf.Session()
-
         self.sess.run(init)
 
     def __init__(self, n = 2, m = 1, k = 20, n_layers = 7):
@@ -87,17 +85,7 @@ class predictor():
         self.data_U = []
         self.data_Y = []
 
-        self.createNetwork()
-
-    def addData(self, x, u, y):
-        self.data_X += x
-        self.data_U += u
-        self.data_Y += y
-
-    def addElement(self, x, u, y):
-        self.data_X.append(x)
-        self.data_U.append(u)
-        self.data_Y.append(y)
+        self.__createNetwork()
 
     def train(self, n_epochs = 1000, n_max = 10000):
 
@@ -128,11 +116,6 @@ class predictor():
 
             print("EPOCH:", epoch, ", COST:", cost, "BATCH_SIZE:", self.BATCH_SIZE)
 
-    def evaluate(self, x, u, y):
-        d = {self.X: [x], self.U: [u], self.Y: [y]}
+    def predict(self, x, u):
+        d = {self.X: [x], self.U: [u]}
         return self.sess.run(self.output, feed_dict=d)
-
-
-# p = Predictor(2)
-# (x, u, y) = generateData()
-# p.addData(x, u, y)
