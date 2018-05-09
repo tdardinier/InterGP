@@ -5,32 +5,6 @@ import random as rd
 nrd = np.random
 
 
-def generateData():
-
-    n = 2
-
-    def generateX():
-        return np.matrix([[rd.random() * 10] for _ in range(n)])
-
-    def generateU():
-        return rd.random() * 2 - 1
-
-    def generateY(x, u):
-        A = np.matrix([[0.2, 0.4],
-                    [0.7, 0.1]])
-        b = np.zeros([n, 1])
-        b.put(0, -1.)
-        eps = nrd.rand(n, 1)
-        return A * x + u * b
-
-    N = 500
-
-    train_X = [generateX() for _ in range(N)]
-    train_U = [generateU() for _ in range(N)]
-    train_Y = [generateY(x, u) for (x, u) in zip(train_X, train_U)]
-
-    return (train_X, train_U, train_Y)
-
 class Predictor():
 
     def randomVar(self, n = 1, m = 1, name = "Undefined"):
@@ -51,26 +25,30 @@ class Predictor():
         # self.rY = tf.reshape(self.Y, [self.n, -1])
         self.rY = tf.reshape(tf.transpose(self.Y, perm=[1, 2, 0]), [self.n, -1])
 
-        self.Wha = self.randomVar(self.k, self.n, name="Wha")
-        self.Bha = self.randomVar(self.k, 1, name="Bha")
-        self.Ha = tf.nn.relu(self.Wha @ self.rX + self.Bha, name="Ha")
-        # self.Ha = tf.nn.relu(self.Wha @ self.rX, name="Ha")
+        self.Wha1 = self.randomVar(self.k, self.n, name="Wha1")
+        self.Bha1 = self.randomVar(self.k, 1, name="Bha1")
+        self.Ha1 = tf.nn.relu(self.Wha1 @ self.rX + self.Bha1, name="Ha1")
+
+        self.Wha2 = self.randomVar(self.k, self.k, name="Wha2")
+        self.Bha2 = self.randomVar(self.k, 1, name="Bha2")
+        self.Ha2 = tf.nn.relu(self.Wha2 @ self.Ha1 + self.Bha2, name="Ha2")
 
         self.Wa = self.randomVar(self.n, self.k, name="Wa")
         self.Ba = self.randomVar(self.n, 1, name="Ba")
-        self.A = self.Wa @ self.Ha + self.Ba
-        # self.A = self.Wa @ self.Ha
+        self.A = self.Wa @ self.Ha2 + self.Ba
 
-        self.Whw = self.randomVar(self.k, self.n, name="Whw")
-        self.Bhw = self.randomVar(self.k, 1, name="Bhw")
-        self.Hw = tf.nn.relu(self.Wha @ self.rX + self.Bha, name="Hw")
-        # self.Hw = tf.nn.relu(self.Wha @ self.rX, name="Hw")
+        self.Whw1 = self.randomVar(self.k, self.n, name="Whw1")
+        self.Bhw1 = self.randomVar(self.k, 1, name="Bhw1")
+        self.Hw1 = tf.nn.relu(self.Whw1 @ self.rX + self.Bhw1, name="Hw1")
+
+        self.Whw2 = self.randomVar(self.k, self.k, name="Whw2")
+        self.Bhw2 = self.randomVar(self.k, 1, name="Bhw2")
+        self.Hw2 = tf.nn.relu(self.Whw2 @ self.Hw1 + self.Bhw2, name="Hw2")
 
         p = self.n * self.m
         self.Ww = self.randomVar(p, self.k, name="Wa")
         self.Bw = self.randomVar(p, 1, name="Ba")
-        self.W = self.Ww @ self.Hw + self.Bw
-        # self.W = self.Ww @ self.Hw
+        self.W = self.Ww @ self.Hw2 + self.Bw
 
         self.rW = tf.reshape(tf.transpose(self.W), [-1, self.n, self.m])
         self.prod = self.rW @ self.U
@@ -86,7 +64,7 @@ class Predictor():
 
         # Mean squared error
         # self.cost = tf.reduce_mean(tf.pow(self.output - self.rY, 2), name="Cost")
-        self.cost = tf.reduce_sum(tf.pow(self.output - self.rY, 2), name="Cost")
+        self.cost = tf.reduce_mean(tf.pow(self.output - self.rY, 2), name="Cost")
 
         self.optimizer = tf.train.AdamOptimizer().minimize(self.cost)
 
@@ -106,7 +84,7 @@ class Predictor():
         (n, m, k) = (self.n, self.m, self.k)
         print("Number of parameters:", 4 * n * k + 2 * k + n + m + n * m)
 
-    def __init__(self, n = 2, k = 10, m = 1, online = True):
+    def __init__(self, n = 2, k = 30, m = 1, online = True):
         self.n = n
         self.k = k
         self.m = m
@@ -139,9 +117,7 @@ class Predictor():
     def train(self, n_epochs = 500, n_max = 10000):
 
         BATCH_SIZE = 32
-        if rd.random() < 0.5:
-            BATCH_SIZE = 1
-        epsilon = 0.01
+        epsilon = 0.00001
         n = len(self.data_X)
         indices = [i for i in range(n)]
         n = min(n, (n_max // BATCH_SIZE) * BATCH_SIZE)
@@ -158,55 +134,29 @@ class Predictor():
                 a = batch * BATCH_SIZE
                 b = (batch + 1) * BATCH_SIZE
                 r = range(a, b)
-                # r = [0, 1, a]
-                # self.data_X[0] = [[0], [0], [0], [0]]
-                # self.data_U[0] = [[0]]
-                # self.data_Y[0] = [[0], [0], [0], [0]]
-                # big = 1000
-                # self.data_X[1] = [[big], [big], [big], [big]]
-                # self.data_U[1] = [[big]]
-                # self.data_Y[1] = [[big], [big], [big], [big]]
                 x = np.asarray([self.data_X[i] for i in r])
                 u = np.asarray([self.data_U[i] for i in r])
                 y = np.asarray([self.data_Y[i] for i in r])
 
                 d = {self.X: x, self.U: u, self.Y: y}
 
-                # print("")
-                # print("")
-                # print("SAPART")
-                # print("x", x)
-                # print("rX", self.sess.run(self.rX, feed_dict=d))
-                # print("A", self.sess.run(self.A, feed_dict=d))
-                # print("rProd", self.sess.run(self.rProd, feed_dict=d))
-                # print("rW", self.sess.run(self.rW, feed_dict=d))
-                # print("W", self.sess.run(self.W, feed_dict=d))
-                # print("U", self.sess.run(self.U, feed_dict=d))
-
-                # print("u", u)
-                # print("rX", rX)
-                # print("rY", rY)
-                # print("out", out)
-                # print("mult", self.sess.run(self.rW @ self.U, feed_dict=d))
-
                 _, c = self.sess.run([self.optimizer, self.cost], feed_dict=d)
-                cost += c
+                cost += c / n_batchs
 
-                d = {self.X: [x[0]], self.U: [u[0]], self.Y: [y[0]]}
-
-                out = self.sess.run(self.output, feed_dict=d)
-                rX = self.sess.run(self.rX, feed_dict=d)
-                rY = self.sess.run(self.rY, feed_dict=d)
+                # out = self.sess.run(self.output, feed_dict=d)
+                # rX = self.sess.run(self.rX, feed_dict=d)
+                # rY = self.sess.run(self.rY, feed_dict=d)
                 # print("rX", rX)
                 # print("out", out)
                 # print("rY", rY)
 
-            print("EPOCH:", epoch, ", COST:", cost)
+            print("EPOCH:", epoch, ", COST:", cost, "BATCH_SIZE:", BATCH_SIZE)
             if cost < epsilon:
                 break
 
-    def evaluate(self, x, u):
-        return self.sess.run(self.output, feed_dict={self.X: [x], self.U: [u]})[0]
+    def evaluate(self, x, u, y):
+        d = {self.X: [x], self.U: [u], self.Y: [y]}
+        return self.sess.run(self.output, feed_dict=d)
 
 
 # p = Predictor(2)
