@@ -12,7 +12,7 @@ class Predictor(predictor.Predictor):
         init = tf.random_uniform(shape=[n, m])
         return tf.Variable(init)
 
-    def __createNetwork(self):
+    def __buildNetwork(self):
 
         self.X = tf.placeholder("float", shape=(None, self.n, 1), name="X")
         self.U = tf.placeholder("float", shape=(None, self.m, 1), name="U")
@@ -64,16 +64,14 @@ class Predictor(predictor.Predictor):
 
     def __init__(self, n = 2, k = 30, m = 1):
 
-        super().__init__()
+        super().__init__(n, m)
 
-        self.n = n
         self.k = k
-        self.m = m
         self.data_X = []
         self.data_U = []
         self.data_Y = []
 
-        self.__createNetwork()
+        self.__buildNetwork()
 
     def train(self, n_epochs = 500, n_max = 10000):
 

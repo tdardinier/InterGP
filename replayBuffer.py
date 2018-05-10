@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import random as rd
 
 
 class ReplayBuffer():
@@ -13,8 +14,20 @@ class ReplayBuffer():
         if filename is not None:
             self.load(filename)
 
+    def shuffle(self):
+        indices = [i for i in range(len(self.x))]
+        rd.shuffle(indices)
+        self.x = [self.x[i] for i in indices]
+        self.u = [self.u[i] for i in indices]
+        self.y = [self.y[i] for i in indices]
+
+    def cut(self, n):
+        self.x = self.x[-n:]
+        self.u = self.u[-n:]
+        self.y = self.y[-n:]
+
     def getFilename(self, name, useSuffix=True):
-        prefix = "files/"
+        prefix = "replays/"
         if useSuffix:
             name += ".npy"
         return prefix + name
@@ -30,12 +43,13 @@ class ReplayBuffer():
 
     def load(self, name="undefined"):
         a = np.load(self.getFilename(name, True))
+        print("Loading " + self.getFilename(name, True) + "...")
         self.x = list(a[0])
         self.u = list(a[1])
         self.y = list(a[2])
 
     def slice(self, l):
-        (x, u, y) = []
+        (x, u, y) = ([], [], [])
         for (a, b) in l:
             r = range(a, b)
             x += [self.x[i] for i in r]
@@ -48,4 +62,6 @@ class ReplayBuffer():
         size = math.ceil(float(n) / float(k))
         a = size * i
         b = size * (i + 1)
-        return (ReplayBuffer([(0, a), (b, n)]), ReplayBuffer(a, b))
+        train = self.slice([(0, a), (b, n)])
+        test = self.slice([(a, b)])
+        return (train, test)

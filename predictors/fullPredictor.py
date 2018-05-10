@@ -19,7 +19,7 @@ class Predictor(predictor.Predictor):
         H = tf.nn.relu(W @ inp + B, name=name + "H")
         return W, B, H
 
-    def __createNetwork(self):
+    def __buildNetwork(self):
 
         def addHidden(w, b, h):
             self.hiddenW.append(w)
@@ -73,21 +73,17 @@ class Predictor(predictor.Predictor):
 
     def __init__(self, n = 2, m = 1, k = 20, n_layers = 7):
 
+        super().__init__(n, m)
+
         self.BATCH_SIZE = 64
         self.use_squared = False
 
-        self.n = n
-        self.m = m
         self.k = k
         self.n_layers = n_layers
 
-        self.data_X = []
-        self.data_U = []
-        self.data_Y = []
+        self.__buildNetwork()
 
-        self.__createNetwork()
-
-    def train(self, n_epochs = 1000, n_max = 10000):
+    def train(self, n_epochs = 300, n_max = 10000):
 
         n = len(self.data_X)
         indices = [i for i in range(n)]

@@ -1,7 +1,8 @@
 import math
 import random as rd
 import scipy.linalg
-import numpy as np
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 
 
 class LQR():
@@ -37,8 +38,6 @@ class LQR():
             self.P.append(current_P)
         F = scipy.linalg.inv(self.B.T * current_P * self.B) * (self.B.T * current_P * self.A)
         return - F * x
-
-
 
 
 class Quantizer():
@@ -82,8 +81,10 @@ class Quantizer():
             m *= self.n_div
         return int(s)
 
+
 def proba(v, tau):
     return math.exp(v / tau)
+
 
 def softmax(values, tau):
     p = [proba(x, tau) for x in values]
@@ -95,6 +96,39 @@ def softmax(values, tau):
         i += 1
     return i - 1
 
+
 def getMax(threshold, n):
     add = threshold / (n // 2 - 1)
     return threshold + add
+
+
+class GaussianProcesses():
+
+    def __init__(self):
+        pass
+
+    def getData(self, dim=2, n=20):
+
+        def f(x):
+            m = 1
+            for xx in x:
+                m *= xx
+            return m
+
+        def getX():
+            return [(rd.random() - 0.5) * 5 for _ in range(dim)]
+
+        X = [getX() for _ in range(n)]
+        Y = [f(x) for x in X]
+
+        return (X, Y)
+
+    def train(self, X, Y):
+        self.kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
+        self.gp = GaussianProcessRegressor(kernel=self.kernel,
+                                           n_restarts_optimizer=9)
+        self.gp.fit(X, Y)
+
+    def predict(self, x):
+        y, sigma = self.gp.predict(x, return_std=True)
+        return y, sigma
