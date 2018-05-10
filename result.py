@@ -21,8 +21,6 @@ class Result():
             self.load(filename=filename)
 
     def addResults(self, x, u, real_y, predicted_y, sigma=None):
-        print(self.x)
-        print(x)
         self.x = np.vstack([self.x, np.array(x).T])
         self.u = np.vstack([self.u, np.array(u).T])
         self.real_y = np.vstack([self.real_y, np.array(real_y).T])

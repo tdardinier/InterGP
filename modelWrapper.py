@@ -7,7 +7,7 @@ use_full = True
 train = False
 
 
-class modelWrapper(agent.Agent):
+class ModelWrapper(agent.Agent):
 
     def __init__(self, agent, n=4, m=1,
                  filename="undefined", use_full=True, train=False):

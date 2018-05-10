@@ -13,7 +13,7 @@ class Evaluator():
         buf = self.buf.cut(c)
         n = len(buf.x[0])
         m = len(buf.u[0])
-        r = rs.Result()
+        r = rs.Result(k=k, c=c, n=n, m=m)
 
         for i in range(k):
             predictor = classPredictor.Predictor(n=n, m=m)

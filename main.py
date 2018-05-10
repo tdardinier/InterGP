@@ -1,14 +1,22 @@
 import gym
 import controller as ctrl
-from agents import linear, random, modelWrapper
+from agents import linear, random
+import modelWrapper
 import numpy as np
 import random as rd
+from evaluator import Evaluator
+from result import Result
+from visualisator import Visualisator
+from predictors import gaussianProcesses
+# from predictors import linearPredictor, fullPredictor
 
+# Classic Control
 cartpole = "CartPole-v1"
 pendulum = 'Pendulum-v0'
 moutain_car_continuous = 'MountainCarContinuous-v0'
 moutain_car = 'MountainCar-v0'
 
+# MuJoCo
 reacher = "Reacher-v2"
 swimmer = "Swimmer-v2"
 hopper = "Hopper-v2"
@@ -18,8 +26,9 @@ cheetah = "HalfCheetah-v2"
 double_pendulum = "InvertedDoublePendulum-v2"
 
 
-def agentRandom(name, N=100000000000, render=True,
-                default_state=None, filename="undefined"):
+def collect_1(name="CartPole-v1", N_episodes=1000, render=True,
+              policy=random.Random, default_state=None, filename="undefined"):
+
     if default_state is None:
         env = gym.make(name)
     else:
@@ -27,14 +36,27 @@ def agentRandom(name, N=100000000000, render=True,
     m = 1
     for x in env.action_space.shape:
         m *= x
-    rand = random.Random(env.action_space.sample)
-    a = modelWrapper.modelWrapper(rand, env.observation_space.shape[0],
+    agent = policy(env.action_space.sample)
+    a = modelWrapper.ModelWrapper(agent, env.observation_space.shape[0],
                                   m, filename=filename)
     c = ctrl.Controller(env, a)
-    c.run_episodes(N, render=render)
+    c.run_episodes(N_episodes, render=render)
 
 
-def agentCartpole():
+def evaluate_2(classPredictor=gaussianProcesses, c=1000, k=10,
+               replay_filename="cartpole", results_filename="untitled"):
+    ev = Evaluator(replay_filename)
+    r = ev.crossValidate(classPredictor, c=c, k=k, filename=results_filename)
+    return r
+
+
+def visualize_3(filename="GP_cartpole_100"):
+    r = Result(filename="GP_cartpole_100")
+    v = Visualisator(r)
+    v.histo()
+
+
+def exampleCartpoleLQR():
 
     c_x = 1  # 2.4
     c_theta = 0.2  # 0.2
@@ -73,7 +95,7 @@ def agentCartpole():
     return results
 
 
-def agentPendulum():
+def examplePendulumLQR():
 
     Q = np.diag([1, 0, 0])
 
@@ -106,7 +128,7 @@ def agentPendulum():
     return results
 
 
-def moutainContinuousCar():
+def exampleMoutainContinuousCarLQR():
 
     def convert_obs(obs):
         a = np.matrix(obs).T
@@ -132,18 +154,3 @@ def moutainContinuousCar():
     results = ctl.run_episodes(1000)
     env.close()
     return results
-
-
-# pendulum()
-# moutainContinuousCar()
-# cartpole()
-
-# p_noise = 0.1
-# agent_a = learning.LearningAgent(
-#    learning_type=learning.LearningType.MONTECARLO)
-# agent_b=learning.LearningAgent(learning_type=learning.LearningType.QLEARNING)
-# a = ctrl.Controller(env, agent_a)
-# b = ctrl.Controller(env, agent_b)
-# ra = a.run_episodes(1000)
-# rb = b.run_episodes(1000)
-# env.close()
