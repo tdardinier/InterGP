@@ -17,14 +17,16 @@ class ReplayBuffer():
     def shuffle(self):
         indices = [i for i in range(len(self.x))]
         rd.shuffle(indices)
-        self.x = [self.x[i] for i in indices]
-        self.u = [self.u[i] for i in indices]
-        self.y = [self.y[i] for i in indices]
+        x = [self.x[i] for i in indices]
+        u = [self.u[i] for i in indices]
+        y = [self.y[i] for i in indices]
+        return ReplayBuffer(x=x, u=u, y=y)
 
     def cut(self, n):
-        self.x = self.x[-n:]
-        self.u = self.u[-n:]
-        self.y = self.y[-n:]
+        x = self.x[-n:]
+        u = self.u[-n:]
+        y = self.y[-n:]
+        return ReplayBuffer(x=x, u=u, y=y)
 
     def getFilename(self, name, useSuffix=True):
         prefix = "replays/"

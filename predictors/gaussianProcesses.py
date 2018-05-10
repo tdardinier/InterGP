@@ -9,6 +9,7 @@ class Predictor(predictor.Predictor):
 
     def __init__(self, n=4, m=1):
         super().__init__(n, m)
+        self.std = True
 
     def formatInput(self, x, u):
         xx = np.array(x)
@@ -62,6 +63,4 @@ class Predictor(predictor.Predictor):
             xy, xsigma = self.gp[i].predict(x, return_std=True)
             y.put(i, xy)
             sigma.put(i, xsigma)
-        if return_std:
-            return y, sigma
-        return y
+        return (y, sigma)

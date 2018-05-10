@@ -16,8 +16,6 @@ def full():
     return b
 
 
-def GP(k=10, n=1000):
-    ev = Evaluator("cartpole", n)
-    a = ev.crossValidate(gaussianProcesses, k=k)
-    print(a)
-    return a
+def GP(c=1000, k=10, filename="undefined"):
+    r = ev.crossValidate(gaussianProcesses, c=c, k=k, filename=filename)
+    return r

@@ -1,6 +1,5 @@
 import replayBuffer as rb
-import numpy as np
-import time
+import result as rs
 
 
 class Evaluator():
@@ -8,38 +7,35 @@ class Evaluator():
     def __init__(self, filename):
         self.buf = rb.ReplayBuffer(filename=filename)
 
-    def crossValidate(self, classPredictor, k=10, c=1000):
+    def crossValidate(self, classPredictor, k=10,
+                      c=1000, filename="undefined"):
 
         buf = self.buf.cut(c)
-
         n = len(buf.x[0])
         m = len(buf.u[0])
-        results = []
+        r = rs.Result()
 
-        time_training = []
-        for i in range(1, k):
+        for i in range(k):
             predictor = classPredictor.Predictor(n=n, m=m)
             (train, test) = buf.crossValidation(k, i)
             predictor.addData(train.x, train.u, train.y)
-            t0 = time.time()
-            print("Iteration", i, ", training...")
+            print("Iteration", i)
+            r.beginTimer()
             predictor.train()
-            print("Iteration", i, ", trained!", time.time() - t0, "s")
-            time_training.append(time.time() - t0)
-            c = 0
+            r.saveTimer()
             num = len(test.x)
 
-            t0 = time.time()
             for j in range(num):
                 x = test.x[j]
                 u = test.u[j]
                 y = test.y[j]
-                yy = predictor.predict(x, u)
-                c += self.__norm(y, yy)
+                sigma = None
+                if predictor.std:
+                    (yy, sigma) = predictor.predict(x, u)
 
-            print("Cost", c)
+                else:
+                    yy = predictor.predict(x, u)
+                r.addResults(x, u, y, yy, sigma)
 
-            results.append(c)
-        print("Average time:", np.average(time_training))
-
-        return results
+        r.save(filename)
+        return r

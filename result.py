@@ -1,58 +1,75 @@
 import numpy as np
+import time
 
 
 class Result():
 
-    def __init__(self, k=10, c=1000, filename=None):
+    def __init__(self, k=10, c=1000, n=4, m=1, filename=None):
         self.k = k
         self.c = c
-        self.x = []
-        self.u = []
-        self.real_y = []
-        self.predicted_y = []
-        self.time = []
-        self.sigma = []
+        self.n = n
+        self.m = m
+        self.x = np.empty([0, self.n])
+        self.u = np.empty([0, self.m])
+        self.real_y = np.empty([0, self.n])
+        self.predicted_y = np.empty([0, self.n])
+        self.time = np.array([])
+        self.sigma = np.empty([0, self.n])
+        self.t0 = None
 
         if filename is not None:
             self.load(filename=filename)
 
-    def addResults(self, x, u, real_y, predicted_y, time, sigma=None):
-        self.x.append(x)
-        self.u.append(u)
-        self.real_y.append(real_y)
-        self.predicted_y.append(predicted_y)
-        self.time.append(time)
+    def addResults(self, x, u, real_y, predicted_y, sigma=None):
+        print(self.x)
+        print(x)
+        self.x = np.vstack([self.x, np.array(x).T])
+        self.u = np.vstack([self.u, np.array(u).T])
+        self.real_y = np.vstack([self.real_y, np.array(real_y).T])
+        self.predicted_y = np.vstack([
+            self.predicted_y,
+            np.array(predicted_y).T])
         if sigma is not None:
-            self.sigma.append(sigma)
+            self.sigma = np.vstack([self.sigma, np.array(sigma).T])
+
+    def beginTimer(self):
+        self.t0 = time.time()
+        print("Launching timer...")
+
+    def saveTimer(self):
+        t = time.time() - self.t0
+        print("Saving timer: " + str(t))
+        self.time = np.append(self.time, t)
 
     def getFilename(self, name, useSuffix=True):
         prefix = "results/"
         if useSuffix:
-            name += ".npy"
+            name += ".npz"
         return prefix + name
 
     def save(self, filename="Undefined"):
-        l = []
-        l.append(self.k)
-        l.append(self.c)
-        l.append(self.x)
-        l.append(self.u)
-        l.append(self.real_y)
-        l.append(self.predicted_y)
-        l.append(self.time)
-        l.append(self.sigma)
-        a = np.array(l)
-        np.save(self.getFilename(filename), a)
+        name = self.getFilename(filename)
+        print("Saving " + name + "...")
+        k = np.array(self.k)
+        c = np.array(self.c)
+        n = np.array(self.n)
+        m = np.array(self.m)
+        np.savez(name, k=k, c=c, n=n, m=m,
+                 x=self.x, u=self.u,
+                 real_y=self.real_y, predicted_y=self.predicted_y,
+                 time=self.time, sigma=self.sigma)
 
     def load(self, filename="undefined"):
         name = self.getFilename(filename, True)
-        a = np.load(name)
         print("Loading " + name + "...")
-        self.k = int(a[0])
-        self.c = int(a[1])
-        self.x = list(a[2])
-        self.u = list(a[3])
-        self.real_y = list(a[4])
-        self.predicted_y = list(a[5])
-        self.time = list(a[6])
-        self.sigma = list(a[7])
+        f = np.load(name)
+        self.k = int(f['k'])
+        self.c = int(f['c'])
+        self.n = int(f['n'])
+        self.m = int(f['m'])
+        self.x = f['x']
+        self.u = f['u']
+        self.real_y = f['real_y']
+        self.predicted_y = f['predicted_y']
+        self.time = f['time']
+        self.sigma = f['sigma']

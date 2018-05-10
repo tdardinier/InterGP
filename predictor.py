@@ -6,6 +6,7 @@ class Predictor():
     def __init__(self, n, m):
         self.n = n
         self.m = m
+        self.std = False
 
         def f(x): x
         self.normalizer = f
