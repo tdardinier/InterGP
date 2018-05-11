@@ -26,8 +26,8 @@ cheetah = "HalfCheetah-v2"
 double_pendulum = "InvertedDoublePendulum-v2"
 
 
-def collect_1(name="CartPole-v1", N_episodes=1000, render=True,
-              policy=random.Random, default_state=None, filename="undefined"):
+def collect_1(name=cartpole, N_episodes=1000, render=True,
+              policy=random.Random, default_state=None, filename="cartpole"):
 
     if default_state is None:
         env = gym.make(name)
@@ -37,21 +37,22 @@ def collect_1(name="CartPole-v1", N_episodes=1000, render=True,
     for x in env.action_space.shape:
         m *= x
     agent = policy(env.action_space.sample)
-    a = modelWrapper.ModelWrapper(agent, env.observation_space.shape[0],
-                                  m, filename=filename)
+    a = modelWrapper.ModelWrapper(agent, n=env.observation_space.shape[0],
+                                  m=m, classPredictor=None, filename=filename)
     c = ctrl.Controller(env, a)
     c.run_episodes(N_episodes, render=render)
+    env.close()
 
 
-def evaluate_2(classPredictor=gaussianProcesses, c=1000, k=10,
-               replay_filename="cartpole", results_filename="untitled"):
+def evaluate_2(classPredictor=gaussianProcesses, c=100, k=10,
+               replay_filename="cartpole", results_filename="GP_cartpole_100"):
     ev = Evaluator(replay_filename)
     r = ev.crossValidate(classPredictor, c=c, k=k, filename=results_filename)
     return r
 
 
 def visualize_3(filename="GP_cartpole_100"):
-    r = Result(filename="GP_cartpole_100")
+    r = Result(filename=filename)
     v = Visualisator(r)
     v.histo()
 

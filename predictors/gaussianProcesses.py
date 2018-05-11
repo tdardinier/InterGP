@@ -15,13 +15,6 @@ class Predictor(predictor.Predictor):
         xx = np.array(x)
         uu = np.array(u)
         x = np.vstack([xx, uu]).T
-        # print("---------------------------------")
-        # print("---------------------------------")
-        # print(x)
-        # print("---------------------------------")
-        # print(self.normalizer(x))
-        # print("---------------------------------")
-        # print("---------------------------------")
         return self.normalizer(x)
 
     def getFormattedInput(self, X, U):
@@ -48,12 +41,8 @@ class Predictor(predictor.Predictor):
         X = self.getFormattedInput(self.data_X, self.data_U)
         for i in range(self.n):
             y = np.reshape([v[i] for v in self.data_Y], [-1, 1])
-            print(np.shape(X), np.shape(y))
-            print(self.data_X[0])
-            print(self.data_U[0])
-            print(X[0])
             self.gp[i].fit(X, y)
-            print("Done", i)
+            print("Done " + str(i + 1) + "/" + str(self.n))
 
     def predict(self, xx, uu, return_std=False):
         x = self.formatInput(xx, uu)
