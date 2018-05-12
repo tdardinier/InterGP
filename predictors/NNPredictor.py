@@ -14,11 +14,14 @@ class Predictor(predictor.Predictor):
         super().__init__(n, m)
 
         self.name = "virtualNN"
-        self.BATCH_SIZE = 32
+        self.BATCH_SIZE = 64
         self.use_squared = False
 
         self.k = k
         self.n_layers = n_layers
+
+        self.n_costs = 100
+        self.display_epochs = 200
 
         self.__buildNetwork()
 
@@ -26,14 +29,17 @@ class Predictor(predictor.Predictor):
         init = tf.random_uniform(shape=[n, m])
         return tf.Variable(init)
 
-    def train(self, n_epochs=500, n_max=10000):
+    def train(self):
         n = len(self.data_X)
         indices = [i for i in range(n)]
-        n = min(n, (n_max // self.BATCH_SIZE) * self.BATCH_SIZE)
         n_batchs = n // self.BATCH_SIZE
         print(self.name + ": n", n, ", n_batchs", n_batchs)
 
-        for epoch in range(n_epochs):
+        min_cost = math.inf
+        last_cost = [math.inf for _ in range(self.n_costs)]
+
+        epoch = 0
+        while min_cost in last_cost:
 
             rd.shuffle(indices)
             cost = 0
@@ -52,7 +58,11 @@ class Predictor(predictor.Predictor):
                 _, c = self.sess.run([self.optimizer, self.cost], feed_dict=d)
                 cost += math.sqrt(c) / n_batchs
 
-            if epoch % 50 == 0:
+            last_cost[epoch % self.n_costs] = cost
+            min_cost = min(min_cost, cost)
+            epoch += 1
+
+            if epoch % self.display_epochs == 0:
                 print(self.name + ": EPOCH:", epoch,
                       ", COST:", cost, "BATCH_SIZE:", self.BATCH_SIZE)
 
