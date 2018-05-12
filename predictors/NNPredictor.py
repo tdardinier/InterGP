@@ -14,7 +14,7 @@ class Predictor(predictor.Predictor):
         super().__init__(n, m)
 
         self.name = "virtualNN"
-        self.BATCH_SIZE = 64
+        self.BATCH_SIZE = 16
         self.use_squared = False
 
         self.k = k

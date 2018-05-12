@@ -1,12 +1,10 @@
 import gym
-import tools
 import controller as ctrl
 from agents import linear, random
 from modelWrapper import ModelWrapper
 import numpy as np
 import random as rd
 from evaluator import Evaluator
-from result import Result
 from visualisator import Visualisator
 from predictors import gaussianProcesses, linearPredictor, fullPredictor
 
@@ -46,6 +44,7 @@ mujoco = [ant, cheetah, hopper, humanoid_standup, double_pendulum,
           pendulum, reacher, swimmer, walker]
 
 predictors = [linearPredictor, fullPredictor, gaussianProcesses]
+predictor_names = ['GP', 'linearNN', 'fullNN']
 
 
 def collect_1(
@@ -85,34 +84,37 @@ def evaluate_2(
     return r
 
 
-def evaluateAllPredictors(
+def evaluateAll(
     predictors=predictors,
+    env_names=classic_control,
     agent_name=default_agent_name,
-    env_name=cartpole,
     c=default_c,
     k=default_k,
 ):
 
     results = []
-    for predictor in predictors:
-        print("Main: Evaluating", predictor)
-        r = evaluate_2(predictor, agent_name, env_name, c, k)
-        results.append(r)
+    for env_name in env_names:
+        for predictor in predictors:
+            print("Main: Evaluating", predictor)
+            r = evaluate_2(predictor, agent_name, env_name, c, k)
+            results.append(r)
     return results
 
 
 def visualize_3(
-    predictor_name=default_predictor_name,
+    predictor_names=predictor_names,
     env_name=default_env_name,
     agent_name=default_agent_name,
     c=default_c,
 ):
 
-    filename = tools.FileNaming.resultName(
-        predictor_name, env_name, agent_name, c)
-    r = Result(filename=filename)
-    v = Visualisator(r)
-    v.histo()
+    v = Visualisator()
+    v.compare(
+        predictor_names,
+        env_name,
+        agent_name,
+        c
+    )
 
 
 def exampleCartpoleLQR():
