@@ -52,9 +52,8 @@ def collect_1(
     env_name=default_env_name,
     n_steps=default_n_steps,
     render=default_render,
-    policy=default_agent
+    policy=default_agent,
 ):
-
     env = gym.make(env_name)
 
     m = 1
@@ -78,10 +77,9 @@ def evaluate_2(
     classPredictor=default_class_predictor,
     agent_name=default_agent_name,
     env_name=cartpole,
-    c=100,
-    k=10
+    c=default_c,
+    k=default_k,
 ):
-
     ev = Evaluator(classPredictor, env_name, agent_name)
     r = ev.crossValidate(c=c, k=k)
     return r
@@ -91,8 +89,8 @@ def evaluateAllPredictors(
     predictors=predictors,
     agent_name=default_agent_name,
     env_name=cartpole,
-    c=100,
-    k=10
+    c=default_c,
+    k=default_k,
 ):
 
     results = []
@@ -107,7 +105,7 @@ def visualize_3(
     predictor_name=default_predictor_name,
     env_name=default_env_name,
     agent_name=default_agent_name,
-    c=default_c
+    c=default_c,
 ):
 
     filename = tools.FileNaming.resultName(
