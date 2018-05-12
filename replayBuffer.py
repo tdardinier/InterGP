@@ -14,7 +14,8 @@ class ReplayBuffer():
         if filename is not None:
             self.load(filename)
 
-    def shuffle(self):
+    def shuffle(self, seed=42):
+        rd.seed(seed)
         indices = [i for i in range(len(self.x))]
         rd.shuffle(indices)
         x = [self.x[i] for i in indices]
@@ -28,24 +29,21 @@ class ReplayBuffer():
         y = self.y[-n:]
         return ReplayBuffer(x=x, u=u, y=y)
 
-    def getFilename(self, name, useSuffix=True):
-        prefix = "replays/"
-        if useSuffix:
-            name += ".npy"
-        return prefix + name
-
     def addData(self, x, u, y):
         self.x.append(x)
         self.u.append(u)
         self.y.append(y)
 
-    def save(self, name="undefined"):
+    def save(self, filename):
         a = np.array([self.x, self.u, self.y])
-        np.save(self.getFilename(name), a)
+        print("ReplayBuffer: Saving " + filename + "...")
+        np.save(filename, a)
+        print("ReplayBuffer: Saved!")
 
-    def load(self, name="undefined"):
-        a = np.load(self.getFilename(name, True))
-        print("Loading " + self.getFilename(name, True) + "...")
+    def load(self, filename):
+        print("ReplayBuffer: Loading " + filename + "...")
+        a = np.load(filename)
+        print("ReplayBuffer: Loaded!")
         self.x = list(a[0])
         self.u = list(a[1])
         self.y = list(a[2])

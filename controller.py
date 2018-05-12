@@ -1,4 +1,5 @@
 import random as rd
+import tools
 
 
 class Stats():
@@ -50,8 +51,21 @@ class Controller():
         self.agent.end_episode(total_reward)
         self.stats.addEpisode(total_reward)
         self.stats.printer()
+        return t
 
-    def run_episodes(self, n, render=True, p_noise=0.0):
-        for i in range(n):
-            print("Running episode", i)
-            self.run_episode(render, p_noise=p_noise)
+    def less_than(self, x, M):
+        if M is None:
+            return True
+        return x < M
+
+    def run_episodes(self, n_episodes=100, n_steps=50000,
+                     render=True, p_noise=0.0):
+        step = 0
+        episode = 0
+        while tools.less_than(episode, n_episodes) and \
+                tools.less_than(step, n_steps):
+            episode += 1
+            print("Running episode", episode)
+            step += self.run_episode(render, p_noise=p_noise)
+
+        self.agent.save()

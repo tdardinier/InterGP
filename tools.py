@@ -36,7 +36,8 @@ class LQR():
         for i in range(self.N):
             current_P = self.computeP(current_P)
             self.P.append(current_P)
-        F = scipy.linalg.inv(self.B.T * current_P * self.B) * (self.B.T * current_P * self.A)
+        F = scipy.linalg.inv(self.B.T * current_P * self.B) * \
+            (self.B.T * current_P * self.A)
         return - F * x
 
 
@@ -53,10 +54,12 @@ class Quantizer():
         return int(y * self.n_div)
 
     def unquantize(self, y, i):
-        return self.mini[i] + (y + 0.5) * (self.maxi[i] - self.mini[i]) / self.n_div
+        return self.mini[i] + \
+            (y + 0.5) * (self.maxi[i] - self.mini[i]) / self.n_div
 
     def unquantizeRandom(self, y, i):
-        return self.mini[i] + (y + rd.random()) * (self.maxi[i] - self.mini[i]) / self.n_div
+        return self.mini[i] + \
+            (y + rd.random()) * (self.maxi[i] - self.mini[i]) / self.n_div
 
     def undiscretizeRandom(self, s):
         x = []
@@ -82,8 +85,30 @@ class Quantizer():
         return int(s)
 
 
+class FileNaming():
+
+    @staticmethod
+    def replayName(env_name, agent_name):
+        folder = "replays" + "/"
+        suffix = ".npy"
+        return folder + env_name + "_" + agent_name + suffix
+
+    @staticmethod
+    def resultName(predictor_name, env_name, agent_name, c):
+        folder = "results" + "/"
+        suffix = ".npz"
+        return folder + predictor_name + "_" + env_name + \
+            "_" + agent_name + "_" + str(c) + suffix
+
+
 def proba(v, tau):
     return math.exp(v / tau)
+
+
+def less_than(x, M):
+    if M is None:
+        return True
+    return x < M
 
 
 def softmax(values, tau):

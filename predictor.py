@@ -8,6 +8,12 @@ class Predictor():
         self.m = m
         self.std = False
 
+        self.data_X = []
+        self.data_U = []
+        self.data_Y = []
+
+        self.name = "predictor"
+
         def f(x): x
         self.normalizer = f
 

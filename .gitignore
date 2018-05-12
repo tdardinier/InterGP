@@ -1,4 +1,6 @@
 __pycache__
 baselines
 envs
+replays
+results
 *.pyc

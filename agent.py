@@ -1,5 +1,3 @@
-import random as rd
-
 class Agent():
     def __init__(self):
         pass
@@ -8,10 +6,13 @@ class Agent():
         pass
 
     def act(self, obs):
-        return rd.randint(0, 1)
+        pass
 
     def end_episode(self, score):
         pass
 
     def update(self, obs, reward, done):
+        pass
+
+    def save(self):
         pass

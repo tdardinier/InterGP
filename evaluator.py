@@ -1,25 +1,33 @@
 import replayBuffer as rb
 import result as rs
+import tools
 
 
 class Evaluator():
 
-    def __init__(self, filename):
-        self.buf = rb.ReplayBuffer(filename=filename)
+    def __init__(self, classPredictor, env_name, agent_name):
 
-    def crossValidate(self, classPredictor, k=10,
-                      c=1000, filename="undefined"):
+        self.classPredictor = classPredictor
+        self.env_name = env_name
+        self.agent_name = agent_name
+
+        replay_filename = tools.FileNaming.replayName(env_name, agent_name)
+        self.buf = rb.ReplayBuffer(filename=replay_filename)
+
+    def crossValidate(self, c=1000, k=10):
 
         buf = self.buf.cut(c)
+        buf = buf.shuffle()
         n = len(buf.x[0])
         m = len(buf.u[0])
         r = rs.Result(k=k, c=c, n=n, m=m)
 
+        predictor = None
         for i in range(k):
-            predictor = classPredictor.Predictor(n=n, m=m)
+            predictor = self.classPredictor.Predictor(n=n, m=m)
             (train, test) = buf.crossValidation(k, i)
             predictor.addData(train.x, train.u, train.y)
-            print("Iteration", i)
+            print("Evaluator: Iteration " + str(i + 1) + "/" + str(k))
             r.beginTimer()
             predictor.train()
             r.saveTimer()
@@ -37,5 +45,7 @@ class Evaluator():
                     yy = predictor.predict(x, u)
                 r.addResults(x, u, y, yy, sigma)
 
-        r.save(filename)
+        f = tools.FileNaming.resultName(
+            predictor.name, self.env_name, self.agent_name, c)
+        r.save(f)
         return r

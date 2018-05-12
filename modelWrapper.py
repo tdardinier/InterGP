@@ -1,23 +1,25 @@
 import numpy as np
 import agent
 import replayBuffer as rb
+import tools
 
 
 class ModelWrapper(agent.Agent):
 
-    def __init__(self, agent, n=4, m=1, classPredictor=None, filename=None):
+    def __init__(self, env_name, agent, n, m,
+                 classPredictor=None, save_file=True):
 
+        self.env_name = env_name
         self.agent = agent
-
         self.n = n
         self.m = m
-
-        self.buf = rb.ReplayBuffer()
-        self.filename = filename
+        self.save_file = save_file
 
         self.p = None
         if classPredictor is not None:
             self.p = classPredictor.Predictor(n=n, m=m)
+
+        self.buf = rb.ReplayBuffer()
 
         self.X = None
         self.U = None
@@ -50,23 +52,19 @@ class ModelWrapper(agent.Agent):
 
         if self.p is not None:
             delta = sum(abs(y - yy)) / self.n
-            print("Delta:", delta)
+            print("ModelWrapper: Delta", delta)
             self.diff.append(delta)
             li = self.diff[-100:]
-            print("Average:", sum(li) / len(li))
+            print("ModelWrapper: Average", sum(li) / len(li))
 
     def end_episode(self, score):
         self.agent.end_episode(score)
 
-        if self.p is not None:
-            self.p.addData(self.X, self.U, self.Y)
         self.n_episodes += 1
 
-        if self.n_episodes % 10 == 0:
-            print("# episodes:", self.n_episodes)
-            if self.filename is not None:
-                self.buf.save(self.filename)
-            if self.p is not None:
+        if self.p is not None:
+            self.p.addData(self.X, self.U, self.Y)
+            if self.n_episodes % 10 == 0:
                 self.p.train()
 
     def new_episode(self, obs):
@@ -75,3 +73,9 @@ class ModelWrapper(agent.Agent):
         self.X = []
         self.U = []
         self.Y = []
+
+    def save(self):
+        print("ModelWrapper: Saving #episodes", self.n_episodes)
+        if self.save_file:
+            f = tools.FileNaming.replayName(self.env_name, self.agent.name)
+            self.buf.save(f)

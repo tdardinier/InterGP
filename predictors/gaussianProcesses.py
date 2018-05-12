@@ -9,6 +9,7 @@ class Predictor(predictor.Predictor):
 
     def __init__(self, n=4, m=1):
         super().__init__(n, m)
+        self.name = "GP"
         self.std = True
 
     def formatInput(self, x, u):
@@ -42,7 +43,7 @@ class Predictor(predictor.Predictor):
         for i in range(self.n):
             y = np.reshape([v[i] for v in self.data_Y], [-1, 1])
             self.gp[i].fit(X, y)
-            print("Done " + str(i + 1) + "/" + str(self.n))
+            print("GaussianProcesses: Done " + str(i + 1) + "/" + str(self.n))
 
     def predict(self, xx, uu, return_std=False):
         x = self.formatInput(xx, uu)

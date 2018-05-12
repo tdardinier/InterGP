@@ -1,19 +1,18 @@
 import tensorflow as tf
 import numpy as np
 import random as rd
-import predictor
+from predictors import NNPredictor
 
 nrd = np.random
 
 
-class Predictor(predictor.Predictor):
+class Predictor(NNPredictor.Predictor):
 
-    def __randomVar(self, n = 1, m = 1, name = "Undefined"):
-        init = tf.random_uniform(shape=[n, m])
-        return tf.Variable(init)
+    def __init__(self, n=2, k=30, m=1, n_layers=2):
+        super().__init__(n=n, k=k, m=m, n_layers=n_layers)
+        self.name = "linearNN"
 
     def __buildNetwork(self):
-
         self.X = tf.placeholder("float", shape=(None, self.n, 1), name="X")
         self.U = tf.placeholder("float", shape=(None, self.m, 1), name="U")
         self.Y = tf.placeholder("float", shape=(None, self.n, 1), name="Y")
@@ -61,51 +60,3 @@ class Predictor(predictor.Predictor):
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
         self.sess.run(init)
-
-    def __init__(self, n = 2, k = 30, m = 1):
-
-        super().__init__(n, m)
-
-        self.k = k
-        self.data_X = []
-        self.data_U = []
-        self.data_Y = []
-
-        self.__buildNetwork()
-
-    def train(self, n_epochs = 500, n_max = 10000):
-
-        BATCH_SIZE = 32
-        epsilon = 0.00001
-        n = len(self.data_X)
-        indices = [i for i in range(n)]
-        n = min(n, (n_max // BATCH_SIZE) * BATCH_SIZE)
-        n_batchs = n // BATCH_SIZE
-        print("n", n, ", n_batchs", n_batchs)
-
-        for epoch in range(n_epochs):
-
-            rd.shuffle(indices)
-            cost = 0
-
-            for batch in range(n_batchs):
-
-                a = batch * BATCH_SIZE
-                b = (batch + 1) * BATCH_SIZE
-                r = range(a, b)
-                x = np.asarray([self.data_X[i] for i in r])
-                u = np.asarray([self.data_U[i] for i in r])
-                y = np.asarray([self.data_Y[i] for i in r])
-
-                d = {self.X: x, self.U: u, self.Y: y}
-
-                _, c = self.sess.run([self.optimizer, self.cost], feed_dict=d)
-                cost += c / n_batchs
-
-            print("EPOCH:", epoch, ", COST:", cost, "BATCH_SIZE:", BATCH_SIZE)
-            if cost < epsilon:
-                break
-
-    def predict(self, x, u):
-        d = {self.X: [x], self.U: [u]}
-        return self.sess.run(self.output, feed_dict=d)

@@ -39,28 +39,21 @@ class Result():
         print("Saving timer: " + str(t))
         self.time = np.append(self.time, t)
 
-    def getFilename(self, name, useSuffix=True):
-        prefix = "results/"
-        if useSuffix:
-            name += ".npz"
-        return prefix + name
-
-    def save(self, filename="Undefined"):
-        name = self.getFilename(filename)
-        print("Saving " + name + "...")
+    def save(self, filename):
+        print("Result: Saving " + filename + "...")
         k = np.array(self.k)
         c = np.array(self.c)
         n = np.array(self.n)
         m = np.array(self.m)
-        np.savez(name, k=k, c=c, n=n, m=m,
+        np.savez(filename, k=k, c=c, n=n, m=m,
                  x=self.x, u=self.u,
                  real_y=self.real_y, predicted_y=self.predicted_y,
                  time=self.time, sigma=self.sigma)
+        print("Result: Saved!")
 
-    def load(self, filename="undefined"):
-        name = self.getFilename(filename, True)
-        print("Loading " + name + "...")
-        f = np.load(name)
+    def load(self, filename):
+        print("Result: Loading " + filename + "...")
+        f = np.load(filename)
         self.k = int(f['k'])
         self.c = int(f['c'])
         self.n = int(f['n'])
@@ -71,3 +64,4 @@ class Result():
         self.predicted_y = f['predicted_y']
         self.time = f['time']
         self.sigma = f['sigma']
+        print("Result: Loaded!")

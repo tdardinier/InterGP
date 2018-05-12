@@ -1,26 +1,23 @@
 import tensorflow as tf
 import numpy as np
-import random as rd
-import math
-import predictor
+from predictors import NNPredictor
 
 nrd = np.random
 
 
-class Predictor(predictor.Predictor):
+class Predictor(NNPredictor.Predictor):
 
-    def __randomVar(self, n = 1, m = 1, name = "Undefined"):
-        init = tf.random_uniform(shape=[n, m])
-        return tf.Variable(init)
+    def __init__(self, n=2, m=1, k=20, n_layers=7):
+        super().__init__(n=n, k=k, m=m, n_layers=n_layers)
+        self.name = "fullNN"
 
-    def __createHidden(self, inp, a, b, name = "Undefined"):
+    def __createHidden(self, inp, a, b, name="Undefined"):
         W = self.__randomVar(b, a, name=name + "W")
         B = self.__randomVar(b, 1, name=name + "B")
         H = tf.nn.relu(W @ inp + B, name=name + "H")
         return W, B, H
 
     def __buildNetwork(self):
-
         def addHidden(w, b, h):
             self.hiddenW.append(w)
             self.hiddenB.append(b)
@@ -70,48 +67,3 @@ class Predictor(predictor.Predictor):
         init = tf.global_variables_initializer()
         self.sess = tf.Session()
         self.sess.run(init)
-
-    def __init__(self, n = 2, m = 1, k = 20, n_layers = 7):
-
-        super().__init__(n, m)
-
-        self.BATCH_SIZE = 64
-        self.use_squared = False
-
-        self.k = k
-        self.n_layers = n_layers
-
-        self.__buildNetwork()
-
-    def train(self, n_epochs = 300, n_max = 10000):
-
-        n = len(self.data_X)
-        indices = [i for i in range(n)]
-        n = min(n, (n_max // self.BATCH_SIZE) * self.BATCH_SIZE)
-        n_batchs = n // self.BATCH_SIZE
-        print("n", n, ", n_batchs", n_batchs)
-
-        for epoch in range(n_epochs):
-
-            rd.shuffle(indices)
-            cost = 0
-
-            for batch in range(n_batchs):
-
-                a = batch * self.BATCH_SIZE
-                b = (batch + 1) * self.BATCH_SIZE
-                r = range(a, b)
-                x = np.asarray([self.data_X[i] for i in r])
-                u = np.asarray([self.data_U[i] for i in r])
-                y = np.asarray([self.data_Y[i] for i in r])
-
-                d = {self.X: x, self.U: u, self.Y: y}
-
-                _, c = self.sess.run([self.optimizer, self.cost], feed_dict=d)
-                cost += math.sqrt(c) / n_batchs
-
-            print("EPOCH:", epoch, ", COST:", cost, "BATCH_SIZE:", self.BATCH_SIZE)
-
-    def predict(self, x, u):
-        d = {self.X: [x], self.U: [u]}
-        return self.sess.run(self.output, feed_dict=d)
