@@ -16,7 +16,7 @@ class Predictor(predictor.Predictor):
         xx = np.array(x)
         uu = np.array(u)
         x = np.vstack([xx, uu]).T
-        return self.normalizer(x)
+        return x
 
     def getFormattedInput(self, X, U):
         R = np.empty([0, self.n + self.m])
@@ -25,9 +25,17 @@ class Predictor(predictor.Predictor):
             R = np.vstack([R, c])
         return R
 
-    def train(self):
+    def getDistance(self, xu1, xu2):
+        d = 0.0
+        for (x1, x2) in zip(xu1, xu2):
+            d += (x1 - x2) ** 2
 
-        self.updateNormalizer()
+    def getClosestNeighbours(self, xu, n=50):
+        X = self.getFormattedInput(self.data_X, self.data_U)
+        d = [self.getDistance(xu, e) for e in self.da]
+
+
+    def train(self):
 
         # Instanciate a Gaussian Process model
         self.kernel = [

@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import random as rd
+import tools
 
 
 class ReplayBuffer():
@@ -13,6 +14,28 @@ class ReplayBuffer():
 
         if filename is not None:
             self.load(filename)
+
+    def normalize(self):
+        xy = self.x + self.y
+        n_xy = tools.Normalizer(xy)
+        x = n_xy.normalize(self.x)
+        y = n_xy.normalize(self.y)
+        n_u = tools.Normalizer(self.u)
+        u = n_u.normalize(self.u)
+        return ReplayBuffer(x=x, u=u, y=y)
+
+    def __str__(self):
+        s = "\n\nReplayBuffer\nx: "
+        for x in self.x:
+            s += str(x) + ","
+        s += "\nu: "
+        for u in self.u:
+            s += str(u) + ","
+        s += "\ny: "
+        for y in self.y:
+            s += str(y) + ","
+        print("\n")
+        return s
 
     def shuffle(self, seed=42):
         rd.seed(seed)

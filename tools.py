@@ -3,6 +3,7 @@ import random as rd
 import scipy.linalg
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+import numpy as np
 
 
 class LQR():
@@ -101,6 +102,47 @@ class FileNaming():
             "_" + agent_name + "_" + str(c) + suffix
 
 
+class GaussianProcesses():
+
+    def __init__(self):
+        self.kernel = C(1.0, (1e-3, 1e3)) * RBF(1, (1e-2, 1e2))
+
+    def train(self, X, Y):
+        self.gp = GaussianProcessRegressor(kernel=self.kernel,
+                                           n_restarts_optimizer=9)
+        self.gp.fit(X, Y)
+
+    def predict(self, x):
+        y, sigma = self.gp.predict(x, return_std=True)
+        return y, sigma
+
+
+class Normalizer():
+
+    def __init__(self, data):
+        epsilon = 0.0000000000001
+        n = np.shape(data)[1]
+        print("n", n)
+        m = np.empty([n, 1])
+        d = np.empty([n, 1])
+        for i in range(n):
+            elements = [x[i] for x in data]
+            m.put(i, np.average(elements))
+            dev = np.std(elements)
+            if dev < epsilon:
+                d.put(i, 0)
+            else:
+                d.put(i, 1. / dev)
+
+        def f(x):
+            return np.multiply(d, (x - m))
+
+        self.f = f
+
+    def normalize(self, data):
+        return [self.f(x) for x in data]
+
+
 def proba(v, tau):
     return math.exp(v / tau)
 
@@ -125,35 +167,3 @@ def softmax(values, tau):
 def getMax(threshold, n):
     add = threshold / (n // 2 - 1)
     return threshold + add
-
-
-class GaussianProcesses():
-
-    def __init__(self):
-        pass
-
-    def getData(self, dim=2, n=20):
-
-        def f(x):
-            m = 1
-            for xx in x:
-                m *= xx
-            return m
-
-        def getX():
-            return [(rd.random() - 0.5) * 5 for _ in range(dim)]
-
-        X = [getX() for _ in range(n)]
-        Y = [f(x) for x in X]
-
-        return (X, Y)
-
-    def train(self, X, Y):
-        self.kernel = C(1.0, (1e-3, 1e3)) * RBF(10, (1e-2, 1e2))
-        self.gp = GaussianProcessRegressor(kernel=self.kernel,
-                                           n_restarts_optimizer=9)
-        self.gp.fit(X, Y)
-
-    def predict(self, x):
-        y, sigma = self.gp.predict(x, return_std=True)
-        return y, sigma

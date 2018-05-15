@@ -103,16 +103,16 @@ def evaluateAll(
 
 def visualize_3(
     predictor_names=predictor_names,
-    env_name=default_env_name,
-    agent_name=default_agent_name,
-    c=default_c,
+    env_names=[default_env_name],
+    agent_names=[default_agent_name],
+    c=[default_c],
 ):
 
     v = Visualisator()
     v.compare(
         predictor_names,
-        env_name,
-        agent_name,
+        env_names,
+        agent_names,
         c
     )
 
