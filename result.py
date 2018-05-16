@@ -14,7 +14,8 @@ class Result():
         self.real_y = np.empty([0, self.n])
         self.predicted_y = np.empty([0, self.n])
         self.time = np.array([])
-        self.sigma = np.empty([0, self.n])
+        # self.sigma = np.empty([0, self.n])
+        self.sigma = np.empty([0, 1])
         self.t0 = None
 
         if filename is not None:

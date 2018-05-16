@@ -6,7 +6,7 @@ import numpy as np
 import random as rd
 from evaluator import Evaluator
 from visualisator import Visualisator
-from predictors import gaussianProcesses, linearPredictor, fullPredictor
+from predictors import gaussianProcesses, linearPredictor, fullPredictor, identity
 
 default_n_steps = 10000
 default_c = 100
@@ -43,8 +43,8 @@ walker = "Walker2d-v2"
 mujoco = [ant, cheetah, hopper, humanoid_standup, double_pendulum,
           pendulum, reacher, swimmer, walker]
 
-predictors = [linearPredictor, fullPredictor, gaussianProcesses]
-predictor_names = ['GP', 'linearNN', 'fullNN']
+predictors = [linearPredictor, fullPredictor, gaussianProcesses, identity]
+predictor_names = ['GP', 'linearNN', 'fullNN', 'identity']
 
 
 def collect_1(
@@ -80,7 +80,8 @@ def evaluate_2(
     k=default_k,
 ):
     ev = Evaluator(classPredictor, env_name, agent_name)
-    r = ev.crossValidate(c=c, k=k)
+    # r = ev.crossValidate(c=c, k=k)
+    r = ev.sampleValidate(c=c, k=k)
     return r
 
 

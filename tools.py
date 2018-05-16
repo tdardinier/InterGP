@@ -113,8 +113,7 @@ class GaussianProcesses():
         self.gp.fit(X, Y)
 
     def predict(self, x):
-        y, sigma = self.gp.predict(x, return_std=True)
-        return y, sigma
+        return self.gp.predict(x, return_std=True)
 
 
 class Normalizer():

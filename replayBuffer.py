@@ -34,7 +34,7 @@ class ReplayBuffer():
         s += "\ny: "
         for y in self.y:
             s += str(y) + ","
-        print("\n")
+        s += "\n"
         return s
 
     def shuffle(self, seed=42):

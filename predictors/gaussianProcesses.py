@@ -1,8 +1,7 @@
 import predictor
 import numpy as np
 # from matplotlib import pyplot as plt
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+import tools
 
 
 class Predictor(predictor.Predictor):
@@ -11,54 +10,74 @@ class Predictor(predictor.Predictor):
         super().__init__(n, m)
         self.name = "GP"
         self.std = True
-
-    def formatInput(self, x, u):
-        xx = np.array(x)
-        uu = np.array(u)
-        x = np.vstack([xx, uu]).T
-        return x
-
-    def getFormattedInput(self, X, U):
-        R = np.empty([0, self.n + self.m])
-        for x, u in zip(X, U):
-            c = self.formatInput(x, u)
-            R = np.vstack([R, c])
-        return R
+        self.each_time = False
 
     def getDistance(self, xu1, xu2):
-        d = 0.0
-        for (x1, x2) in zip(xu1, xu2):
-            d += (x1 - x2) ** 2
+        return np.linalg.norm(xu1 - xu2)
 
-    def getClosestNeighbours(self, xu, n=50):
-        X = self.getFormattedInput(self.data_X, self.data_U)
-        d = [self.getDistance(xu, e) for e in self.da]
+    def getCouples(self):
+        X = [(np.vstack([self.data_X[i], self.data_U[i]]),
+              self.data_Y[i]) for i in range(len(self.data_X))]
+        return X
 
+    def getTriples(self):
+        X = [(self.data_X[i], self.data_U[i],
+              self.data_Y[i]) for i in range(len(self.data_X))]
+        return X
+
+    def getClosestNeighbours(self, x, n=100):
+        X = self.getTriples()
+        X.sort(key=lambda e:
+               self.getDistance(x, e[0]))
+        return X[:n]
+
+    def getClosestNeighboursXU(self, xu, n=100):
+        X = self.getCouples()
+        X.sort(key=lambda e:
+               self.getDistance(xu, e[0]))
+        return X[:n]
+
+    def getXY(self):
+        X = np.empty([0, self.n + self.m])
+        for (x, u) in zip(self.data_X, self.data_U):
+            xu = np.vstack([x, u]).T
+            X = np.vstack([X, xu])
+        Y = np.empty([0, self.n])
+        for y in self.data_Y:
+            Y = np.vstack([Y, y.T])
+        return X, Y
 
     def train(self):
+        if not self.each_time:
+            (X, Y) = self.getXY()
+            self.gp = tools.GaussianProcesses()
+            self.gp.train(X, Y)
 
-        # Instanciate a Gaussian Process model
-        self.kernel = [
-            C(1.0, (1e-3, 1e3)) * RBF(1, (1e-2, 1e2))
-            for _ in range(self.n)]
-        self.gp = [GaussianProcessRegressor(
-            kernel=self.kernel[i],
-            n_restarts_optimizer=9
-        )
-            for i in range(self.n)]
+    def concat(self, XU):
+        A = np.empty([0, np.shape(XU)[2]])
+        for xu in XU:
+            A = np.vstack([A, xu])
+        return A
 
-        X = self.getFormattedInput(self.data_X, self.data_U)
-        for i in range(self.n):
-            y = np.reshape([v[i] for v in self.data_Y], [-1, 1])
-            self.gp[i].fit(X, y)
-            print("GaussianProcesses: Done " + str(i + 1) + "/" + str(self.n))
+    def extractXU(self, x):
+        xx = x[0]
+        uu = x[1]
+        xu = np.vstack([xx, uu]).T
+        return xu
 
-    def predict(self, xx, uu, return_std=False):
-        x = self.formatInput(xx, uu)
-        y = np.empty([self.n, 1])
-        sigma = np.empty([self.n, 1])
-        for i in range(self.n):
-            xy, xsigma = self.gp[i].predict(x, return_std=True)
-            y.put(i, xy)
-            sigma.put(i, xsigma)
-        return (y, sigma)
+    def predict(self, xx, uu):
+        xu = np.vstack([xx, uu]).T
+        if self.each_time:
+            # XUY = self.getClosestNeighboursXU(xu)
+            XUY = self.getClosestNeighbours(xx.T)
+            XU = self.concat([self.extractXU(x) for x in XUY])
+            Y = self.concat([x[2].T for x in XUY])
+            gp = tools.GaussianProcesses()
+            gp.train(XU, Y)
+            y, sigma = gp.predict(xu)
+        else:
+            y, sigma = self.gp.predict(xu)
+        y = y.T
+        if self.std:
+            return y, sigma
+        return y
