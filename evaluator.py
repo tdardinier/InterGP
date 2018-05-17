@@ -3,24 +3,23 @@ import result as rs
 import tools
 
 
-class Evaluator():
+class Evaluator:
 
-    def __init__(self, classPredictor, env_name, agent_name):
+    def __init__(self, predictor, env_name, agent_name):
 
-        self.classPredictor = classPredictor
+        self.predictor = predictor
         self.env_name = env_name
         self.agent_name = agent_name
 
         replay_filename = tools.FileNaming.replayName(env_name, agent_name)
         self.buf = rb.ReplayBuffer(filename=replay_filename)
 
-    def sampleValidate(self, c=10000, k=100):
-
-        n_test = int(c / k)
+    def sampleValidate(self, c=10000, n_test=1000):
 
         buf = self.buf.shuffle()
         buf = buf.cut(c + n_test)
         buf = buf.normalize()
+        buf = buf.removeX()  # Removing X
 
         n = len(buf.x[0])
         m = len(buf.u[0])
@@ -31,7 +30,7 @@ class Evaluator():
 
         r.beginTimer()
 
-        predictor = self.classPredictor.Predictor(n=n, m=m)
+        predictor = self.predictor(n=n, m=m)
         predictor.addData(train.x, train.u, train.y)
         predictor.train()
 
@@ -43,12 +42,14 @@ class Evaluator():
                 (yy, sigma) = predictor.predict(x, u)
             else:
                 yy = predictor.predict(x, u)
-            print(i)
+                if i % 100 == 0:
+                    print("Evaluator: " + str(i) + "/" + str(n_test))
             r.addResults(x, u, y, yy, sigma)
 
         f = tools.FileNaming.resultName(
             predictor.name, self.env_name, self.agent_name, c)
         r.saveTimer()
+        r.addX()  # Adding X
         r.save(f)
         return r
 
@@ -62,9 +63,8 @@ class Evaluator():
         r = rs.Result(k=k, c=c, n=n, m=m)
 
         predictor = None
-        # for i in range(k):
-        for i in range(0, 1):
-            predictor = self.classPredictor.Predictor(n=n, m=m)
+        for i in range(k):
+            predictor = self.predictor(n=n, m=m)
             (train, test) = buf.crossValidation(k, i)
             predictor.addData(train.x, train.u, train.y)
             print("Evaluator: Iteration " + str(i + 1) + "/" + str(k))

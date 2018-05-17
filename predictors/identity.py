@@ -8,4 +8,4 @@ class Predictor(predictor.Predictor):
         self.name = "identity"
 
     def predict(self, xx, uu):
-        return xx
+        return 0 * xx

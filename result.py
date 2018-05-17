@@ -33,12 +33,18 @@ class Result():
 
     def beginTimer(self):
         self.t0 = time.time()
-        print("Launching timer...")
+        print("Result: Launching timer...")
 
     def saveTimer(self):
         t = time.time() - self.t0
-        print("Saving timer: " + str(t))
+        print("Result: Saving timer: " + str(t))
         self.time = np.append(self.time, t)
+
+    def addX(self):
+        ry = [self.real_y[i] - self.x[i] for i in range(len(self.x))]
+        py = [self.predicted_y[i] - self.x[i] for i in range(len(self.x))]
+        self.real_y = ry
+        self.predicted_y = py
 
     def save(self, filename):
         print("Result: Saving " + filename + "...")

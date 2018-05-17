@@ -18,7 +18,7 @@ class Stats():
 
     def printer(self, n=100):
         liste = self.stats[len(self.stats) - n:]
-        print("Current average:", sum(liste) / len(liste))
+        print("Controller: Current average", sum(liste) / len(liste))
 
 
 class Controller():
@@ -47,7 +47,7 @@ class Controller():
             observation, reward, done, info = self.env.step(action)
             total_reward += reward
             self.agent.update(observation, reward, done)
-        print("Episode finished after {} timesteps".format(t+1))
+            print("Controller: Episode finished ({} timesteps)".format(t+1))
         self.agent.end_episode(total_reward)
         self.stats.addEpisode(total_reward)
         self.stats.printer()
@@ -65,7 +65,7 @@ class Controller():
         while tools.less_than(episode, n_episodes) and \
                 tools.less_than(step, n_steps):
             episode += 1
-            print("Running episode", episode)
+            print("Controller: Running episode", episode)
             step += self.run_episode(render, p_noise=p_noise)
 
         self.agent.save()

@@ -24,9 +24,6 @@ class LQR():
         a = self.A.T * P * self.B
         b = self.B.T * P * self.B
         c = self.B.T * P * self.A
-        # print(self.B)
-        # print(P)
-        # print(b)
         inv_b = scipy.linalg.inv(b)
         new_P -= a * inv_b * c
         new_P += self.Q
@@ -121,7 +118,7 @@ class Normalizer():
     def __init__(self, data):
         epsilon = 0.0000000000001
         n = np.shape(data)[1]
-        print("n", n)
+        print("Tools Normalizer: n", n)
         m = np.empty([n, 1])
         d = np.empty([n, 1])
         for i in range(n):

@@ -8,9 +8,9 @@ class ReplayBuffer():
 
     def __init__(self, x=[], u=[], y=[], filename=None):
 
-        self.x = x
-        self.u = u
-        self.y = y
+        self.x = list(x)
+        self.u = list(u)
+        self.y = list(y)
 
         if filename is not None:
             self.load(filename)
@@ -23,6 +23,10 @@ class ReplayBuffer():
         n_u = tools.Normalizer(self.u)
         u = n_u.normalize(self.u)
         return ReplayBuffer(x=x, u=u, y=y)
+
+    def removeX(self):
+        y = [self.y[i] - self.x[i] for i in range(len(self.x))]
+        return ReplayBuffer(x=self.x, u=self.u, y=y)
 
     def __str__(self):
         s = "\n\nReplayBuffer\nx: "
