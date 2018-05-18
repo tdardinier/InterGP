@@ -18,9 +18,9 @@ Takes a ReplayBuffer file (from replays/) and a predictor, and evaluates it. Sav
 
 - main.py: 
 "Demo" file which implements the 3 main steps that can be done.
-1. Collect data from an environment and save it in a ReplayBuffer file.
-2. Evaluate a predictor on a ReplayBuffer and save it in a Result file.
-3. Visualize the results of the predictors.
+	1. Collect data from an environment and save it in a ReplayBuffer file.
+	2. Evaluate a predictor on a ReplayBuffer and save it in a Result file.
+	3. Visualize the results of the predictors.
 
 - modelWrapper.py: 
 A meta-agent (policy), which takes another agent (policy) and runs it, while evaluating a predictor or saving a ReplayBuffer.
