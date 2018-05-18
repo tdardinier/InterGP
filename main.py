@@ -1,4 +1,3 @@
-import gym
 import controller as ctrl
 from modelWrapper import ModelWrapper
 from evaluator import Evaluator
@@ -6,6 +5,8 @@ from visualisator import Visualisator
 import definitions as d
 import tools
 import replayBuffer
+from baselines import deepq
+import gym
 
 
 def collect_1(
@@ -14,18 +15,15 @@ def collect_1(
     n_steps=d.default_n_steps,
     render=d.default_render,
 ):
-    nenv = gym.make(env.name)
+    env.make()
 
-    m = 1
-    for x in nenv.action_space.shape:
-        m *= x
-    policy = agent.agent(nenv.action_space.sample)
+    policy = agent.agent(env)
 
-    a = ModelWrapper(env.name, policy, nenv.observation_space.shape[0], m)
-    c = ctrl.Controller(nenv, a)
+    a = ModelWrapper(env, policy)
+    c = ctrl.Controller(env.env, a)
     c.run_episodes(n_episodes=None, n_steps=n_steps, render=render)
 
-    nenv.close()
+    env.close()
 
 
 def collectAll(
@@ -98,3 +96,29 @@ def visualizeSigma(
 def getReplayBuffer(env=d.default_env, agent=d.default_agent):
     f = tools.FileNaming.replayName(env.name, agent.name)
     return replayBuffer.ReplayBuffer(filename=f)
+
+
+def trainModelDeepQ(env_wrapper, aim=499):
+
+    def callback(lcl, _glb):
+        is_solved = lcl['t'] > 100 and \
+            sum(lcl['episode_rewards'][-101:-1]) / 100 >= aim
+        return is_solved
+
+    env_wrapper.make()
+
+    model = deepq.models.mlp([64])
+    act = deepq.learn(
+        env_wrapper.env,
+        q_func=model,
+        lr=1e-3,
+        max_timesteps=100000,
+        buffer_size=50000,
+        exploration_fraction=0.1,
+        exploration_final_eps=0.02,
+        print_freq=10,
+        callback=callback
+    )
+    filename = tools.FileNaming.modelName(env_wrapper)
+    print("Saving model to " + filename)
+    act.save(filename)

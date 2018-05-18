@@ -1,6 +1,6 @@
 class Agent():
-    def __init__(self):
-        pass
+    def __init__(self, env_wrapper):
+        self.env_wrapper = env_wrapper
 
     def new_episode(self, obs):
         pass

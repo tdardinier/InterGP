@@ -98,6 +98,12 @@ class FileNaming():
         return folder + predictor_name + "_" + env_name + \
             "_" + agent_name + "_" + str(c) + suffix
 
+    @staticmethod
+    def modelName(env_wrapper):
+        folder = "models" + "/"
+        suffix = ".pkl"
+        return folder + env_wrapper.name + suffix
+
 
 class GaussianProcesses():
 
@@ -163,3 +169,10 @@ def softmax(values, tau):
 def getMax(threshold, n):
     add = threshold / (n // 2 - 1)
     return threshold + add
+
+
+def getM(env):
+    m = 1
+    for x in env.action_space.shape:
+        m *= x
+    return m

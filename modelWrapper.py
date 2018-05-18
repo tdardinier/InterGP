@@ -6,18 +6,18 @@ import tools
 
 class ModelWrapper(agent.Agent):
 
-    def __init__(self, env_name, agent, n, m,
-                 classPredictor=None, save_file=True):
+    def __init__(self, env, agent, classPredictor=None, save_file=True):
 
-        self.env_name = env_name
+        self.env_name = env.name
         self.agent = agent
-        self.n = n
-        self.m = m
+        self.n = env.env.observation_space.shape[0]
+        self.m = tools.getM(env.env)
+
         self.save_file = save_file
 
         self.p = None
         if classPredictor is not None:
-            self.p = classPredictor.Predictor(n=n, m=m)
+            self.p = classPredictor.Predictor(n=self.n, m=self.m)
 
         self.buf = rb.ReplayBuffer()
 

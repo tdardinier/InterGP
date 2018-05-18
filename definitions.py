@@ -1,6 +1,7 @@
 from predictors import gaussianProcesses, linearPredictor, \
     fullPredictor, identity
-from agents import random
+from agents import random, deepQ
+import gym
 
 
 class EnvWrapper:
@@ -9,6 +10,14 @@ class EnvWrapper:
         self.name = name
         self.n = n
         self.m = m
+        self.env = None
+
+    def make(self):
+        if self.env is None:
+            self.env = gym.make(self.name)
+
+    def close(self):
+        self.env.close()
 
 
 class PredictorWrapper:
@@ -65,6 +74,7 @@ id_predictor = PredictorWrapper(identity.Predictor, "identity")
 predictors = [linear_predictor, full_predictor, gp, id_predictor]
 
 agent_random = AgentWrapper(random.Random, "random")
+deepq = AgentWrapper(deepQ.DeepQ, "deepQ")
 
 default_n_steps = 20000
 default_c = 100
