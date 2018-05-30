@@ -15,6 +15,24 @@ class ReplayBuffer():
         if filename is not None:
             self.load(filename)
 
+    def getTrajectories(self):
+        rs = []
+        r = ReplayBuffer()
+        prev_y = self.x[0]
+        for i in range(len(self.x)):
+            x = self.x[i]
+            u = self.u[i]
+            y = self.y[i]
+            if np.array_equal(x, prev_y):
+                r.addData(x, u, y)
+                prev_y = y
+            else:
+                rs.append(r)
+                if i + 1 < len(self.x):
+                    r = ReplayBuffer()
+                    prev_y = self.x[i+1]
+        return rs
+
     def normalize(self):
         xy = self.x + self.y
         n_xy = tools.Normalizer(xy)

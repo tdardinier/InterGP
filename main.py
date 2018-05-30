@@ -6,7 +6,7 @@ import definitions as d
 import tools
 import replayBuffer
 from baselines import deepq
-import gym
+from baselines.acktr.run_mujoco import train
 
 
 def collect_1(
@@ -122,3 +122,9 @@ def trainModelDeepQ(env_wrapper, aim=499):
     filename = tools.FileNaming.modelName(env_wrapper)
     print("Saving model to " + filename)
     act.save(filename)
+
+
+def collectACKTR(env_wrapper, steps=1000000):
+    agent = d.agent_acktr
+    f = tools.FileNaming.replayName(env_wrapper.name, agent.name)
+    train(env_wrapper.name, steps, 42, f)

@@ -6,7 +6,7 @@ import gym
 
 class EnvWrapper:
 
-    def __init__(self, name, n=4, m=1):
+    def __init__(self, name, n=4, m=1, aim=499):
         self.name = name
         self.n = n
         self.m = m
@@ -36,7 +36,7 @@ class AgentWrapper:
 
 # Classic Control
 acrobot = EnvWrapper("Acrobot-v1", 6, 1)
-cartpole = EnvWrapper("CartPole-v1", 4, 1)
+cartpole = EnvWrapper("CartPole-v1", 4, 1, 499)
 moutain_car = EnvWrapper('MountainCar-v0', 2, 1)
 moutain_car_continuous = EnvWrapper('MountainCarContinuous-v0', 2, 1)
 pendulum = EnvWrapper('Pendulum-v0', 3, 1)
@@ -74,6 +74,7 @@ id_predictor = PredictorWrapper(identity.Predictor, "identity")
 predictors = [linear_predictor, full_predictor, gp, id_predictor]
 
 agent_random = AgentWrapper(random.Random, "random")
+agent_acktr = AgentWrapper(None, "acktr")
 deepq = AgentWrapper(deepQ.DeepQ, "deepQ")
 
 default_n_steps = 20000
