@@ -30,7 +30,9 @@ class ReplayBuffer():
                 rs.append(r)
                 if i + 1 < len(self.x):
                     r = ReplayBuffer()
+                    r.addData(x, u, y)
                     prev_y = self.x[i+1]
+        rs.append(r)
         return rs
 
     def normalize(self):
