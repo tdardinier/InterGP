@@ -15,6 +15,7 @@ class Visualisator():
         return np.linalg.norm(delta, norm)
 
     def __fullScreen(self):
+        print("Showing...")
         mng = plt.get_current_fig_manager()
         mng.full_screen_toggle()
         plt.show()
@@ -27,7 +28,8 @@ class Visualisator():
             n.append(self.__normL(ry, py, 1) / r.n)
         return n
 
-    def compare(self, predictors, envs, agent_names, cs, norm=1, bins=100):
+    def compare(self, predictors, envs, agent_names, cs, norm=1, density=False):
+        print(density)
         nrows = 1
         ncols = 1
         n = len(envs)
@@ -41,6 +43,8 @@ class Visualisator():
 
         j = 0
         for env in envs:
+            labels = []
+            data = []
             for agent_name in agent_names:
                 j += 1
                 plt.subplot(nrows, ncols, j)
@@ -58,8 +62,10 @@ class Visualisator():
                         label = predictor_name
                         label += " - " + str(c)
                         label += " - " + str(int(sum(r.time))) + " s"
-                        plt.hist(n, bins, alpha=0.5, label=label)
-                        plt.legend(loc='upper right')
+                        data.append(n)
+                        labels.append(label)
+            plt.hist(data, 100, label=labels, density=density)
+            plt.legend(loc='upper right')
         self.__fullScreen()
 
     def plotSigma(self, env_name, agent_name="random", c=10000):

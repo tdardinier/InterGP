@@ -73,6 +73,7 @@ def visualize_3(
     envs=d.classic_control,
     agents=[d.default_agent],
     cs=[d.default_c],
+    density=False,
 ):
 
     v = Visualisator()
@@ -80,7 +81,8 @@ def visualize_3(
         [p.name for p in predictors],
         envs,
         [a.name for a in agents],
-        cs
+        cs,
+        density=density,
     )
 
 
