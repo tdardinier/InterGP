@@ -76,6 +76,8 @@ class InterGP:
         interInvK = InterMatrix.createFromMatrix(self.inv_K)
         interInvKf = InterMatrix.createFromMatrix(self.inv_K_f)
 
+        print("interInvKf", interInvKf)
+
         mean = InterMatrix.mult(K_star, interInvKf)
 
         K_star_T = K_star.transpose()
