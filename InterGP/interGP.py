@@ -1,10 +1,11 @@
 import numpy as np
 from scipy.optimize import fmin_tnc
+from scipy.stats import norm
 
 
 class InterGP:
 
-    def __init__(self, k, n=1):
+    def __init__(self, k):
 
         self.k = k  # kernel function
 
@@ -41,8 +42,9 @@ class InterGP:
         return (mean, var)
 
     def predictState(self, bounds, p=0.95):
-        # TODO p -> alpha
-        alpha = 1.96
+
+        alpha = norm.ppf(0.5 * (1. + p))
+        print("Proba " + str(p) + " -> " + str(alpha))
 
         def mu(x):
             K_star = self.generateMatrixCov([x], self.X)
@@ -75,25 +77,3 @@ class InterGP:
         print(xa, xb)
 
         return (m(xa[0]), M(xb[0]))
-
-
-def f(x):
-    return x[0] * x[1]
-
-
-# x : n * 1, y : n * 1
-# exponential
-def k(x, y):
-    s = 0.0
-    assert (len(x) == len(y)), "Not same length"
-    n = len(x)
-    for i in range(n):
-        s += (x[i] - y[i]) ** 2
-    return np.exp(-0.5 * s)
-
-
-X = [[np.random.rand() * 10, np.random.rand() * 10] for i in range(100)]
-Y = [f(x) for x in X]
-
-gp = InterGP(k)
-gp.fit(X, Y)
