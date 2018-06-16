@@ -1,6 +1,7 @@
 import replayBuffer as rb
 import result as rs
 import tools
+import numpy as np
 
 
 class Evaluator:
@@ -14,12 +15,15 @@ class Evaluator:
         replay_filename = tools.FileNaming.replayName(env_name, agent_name)
         self.buf = rb.ReplayBuffer(filename=replay_filename)
 
-    def sampleValidate(self, c=10000, n_test=1000):
+    def sampleValidate(self, c=10000, n_test=1000, removeX=False):
 
-        buf = self.buf.shuffle()
+        buf = self.buf
+        # buf = buf.shuffle()
         buf = buf.cut(c + n_test)
+
         buf = buf.normalize()
-        buf = buf.removeX()  # Removing X
+        if removeX:
+            buf = buf.removeX()  # Removing X
 
         n = len(buf.x[0])
         m = len(buf.u[0])
@@ -28,6 +32,26 @@ class Evaluator:
         train = buf.slice([(0, c)])
         test = buf.slice([(c, c + n_test)])
 
+        sensor_corruption = False
+
+        if sensor_corruption:
+            id_corrupts = [20, 40]
+            for id_corrupt in id_corrupts:
+                xx = np.matrix([[np.random.normal()] for _ in range(n)])
+                test.y[id_corrupt] = xx
+                test.x[id_corrupt+1] = xx
+
+        perturbation_env = True
+
+        if perturbation_env:
+            aa = 21
+            bb = 51
+            cc = 71
+            dd = 49
+            test.y[aa-1] = test.x[bb]
+            test.y[cc-1] = test.x[aa]
+            test = test.slice([(0, aa), (bb, cc), (aa, dd)])
+
         r.beginTimer()
 
         predictor = self.predictor(n=n, m=m)
@@ -35,10 +59,15 @@ class Evaluator:
         predictor.train()
 
         i = 0
+        # x, u, y: a transition of the real trajectory
         for (x, u, y) in zip(test.x, test.u, test.y):
             sigma = None
             i += 1
             if predictor.std:
+                # if i % 10 == 6:
+                    # xx = np.matrix([[np.random.normal()] for _ in range(n)])
+                    # (yy, sigma) = predictor.predict(xx, u)
+                # else:
                 (yy, sigma) = predictor.predict(x, u)
             else:
                 yy = predictor.predict(x, u)
@@ -49,7 +78,8 @@ class Evaluator:
         f = tools.FileNaming.resultName(
             predictor.name, self.env_name, self.agent_name, c)
         r.saveTimer()
-        r.addX()  # Adding X
+        if removeX:
+            r.addX()  # Adding X
         r.save(f)
         return r
 

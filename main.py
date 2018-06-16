@@ -5,8 +5,9 @@ from visualisator import Visualisator
 import definitions as d
 import tools
 import replayBuffer
-from baselines import deepq
-from baselines.acktr.run_mujoco import train
+import result
+# from baselines import deepq
+# from baselines.acktr.run_mujoco import train
 
 
 def collect_1(
@@ -100,33 +101,47 @@ def getReplayBuffer(env=d.default_env, agent=d.default_agent):
     return replayBuffer.ReplayBuffer(filename=f)
 
 
-def trainModelDeepQ(env_wrapper, aim=499):
-
-    def callback(lcl, _glb):
-        is_solved = lcl['t'] > 100 and \
-            sum(lcl['episode_rewards'][-101:-1]) / 100 >= aim
-        return is_solved
-
-    env_wrapper.make()
-
-    model = deepq.models.mlp([64])
-    act = deepq.learn(
-        env_wrapper.env,
-        q_func=model,
-        lr=1e-3,
-        max_timesteps=100000,
-        buffer_size=50000,
-        exploration_fraction=0.1,
-        exploration_final_eps=0.02,
-        print_freq=10,
-        callback=callback
-    )
-    filename = tools.FileNaming.modelName(env_wrapper)
-    print("Saving model to " + filename)
-    act.save(filename)
+def getResults(
+    predictor=d.default_predictor,
+    agent=d.default_agent,
+    env=d.default_env,
+    c=d.default_c,
+):
+    f = tools.FileNaming.resultName(
+        predictor.name,
+        env.name,
+        agent.name,
+        c)
+    return result.Result(filename=f)
 
 
-def collectACKTR(env_wrapper, steps=1000000):
-    agent = d.agent_acktr
-    f = tools.FileNaming.replayName(env_wrapper.name, agent.name)
-    train(env_wrapper.name, steps, 42, f)
+# def trainModelDeepQ(env_wrapper, aim=499):
+#
+#     def callback(lcl, _glb):
+#         is_solved = lcl['t'] > 100 and \
+#             sum(lcl['episode_rewards'][-101:-1]) / 100 >= aim
+#         return is_solved
+#
+#     env_wrapper.make()
+#
+#     model = deepq.models.mlp([64])
+#     act = deepq.learn(
+#         env_wrapper.env,
+#         q_func=model,
+#         lr=1e-3,
+#         max_timesteps=100000,
+#         buffer_size=50000,
+#         exploration_fraction=0.1,
+#         exploration_final_eps=0.02,
+#         print_freq=10,
+#         callback=callback
+#     )
+#     filename = tools.FileNaming.modelName(env_wrapper)
+#     print("Saving model to " + filename)
+#     act.save(filename)
+#
+#
+# def collectACKTR(env_wrapper, steps=1000000):
+#     agent = d.agent_acktr
+#     f = tools.FileNaming.replayName(env_wrapper.name, agent.name)
+#     train(env_wrapper.name, steps, 42, f)

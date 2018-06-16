@@ -1,8 +1,10 @@
 import numpy as np
 from result import Result
+# from replayBuffer import ReplayBuffer
 import tools
 import matplotlib.pyplot as plt
 import math
+from scipy.stats import norm
 
 
 class Visualisator():
@@ -28,7 +30,9 @@ class Visualisator():
             n.append(self.__normL(ry, py, 1) / r.n)
         return n
 
-    def compare(self, predictors, envs, agent_names, cs, norm=1, density=False):
+    def compare(self,
+                predictors, envs, agent_names,
+                cs, norm=1, density=False):
         print(density)
         nrows = 1
         ncols = 1
@@ -83,4 +87,68 @@ class Visualisator():
         plt.scatter(X, Y)
         the_x = sorted(X)
         plt.plot(the_x, the_x)
+        self.__fullScreen()
+
+    def plotDimensions(self,
+                       predictor_name="NGP",
+                       env_name="CartPole-v1",
+                       agent_name="random",
+                       c=100,
+                       components=[0],
+                       p=[0.5, 0.7, 0.9, 0.99],
+                       size=50,
+                       loc="upper left",
+                       ):
+
+        filename = tools.FileNaming.resultName(
+            predictor_name, env_name, agent_name, c
+        )
+        r = Result(filename=filename)
+        plt.subplots(nrows=len(components), ncols=1)
+        for ii in range(len(components)):
+            i = components[ii]
+            plt.subplot(len(components), 1, ii+1)
+            s = env_name
+            s += ", dimension " + str(i)
+            s += ", agent: " + agent_name
+            s += ", c = " + str(c)
+            s += ", p = " + str(p)
+            plt.title(s)
+            x = []
+            y = []
+            ry = []
+            y1 = [[] for _ in p]
+            y2 = [[] for _ in p]
+            alphas = [norm.ppf(0.5 * (1. + pp)) for pp in p]
+
+            for t in range(size):
+                x.append(t)
+                yy = r.predicted_y[t, i]
+                sigma = r.sigma[t, i]
+                y.append(yy)
+                for j in range(len(alphas)):
+                    alpha = alphas[j]
+                    y1[j].append(yy - alpha * sigma)
+                    y2[j].append(yy + alpha * sigma)
+                ry.append(r.real_y[t, i])
+
+                if t in [20, 40] and predictor_name == "FNGP":
+                    plt.axvline(x=t)
+
+            cmap = plt.get_cmap('jet_r')
+            prev_y1 = y
+            prev_y2 = y
+            for j in range(len(p)):
+                color = cmap(float(j) / len(p))
+                plt.fill_between(x, prev_y1, y1[j], alpha=0.5, color=color,
+                                 label="Confidence interval at " +
+                                 str(int(p[j] * 100)) + "%")
+                plt.fill_between(x, prev_y2, y2[j], alpha=0.5, color=color)
+                prev_y1, prev_y2 = y1[j], y2[j]
+
+            plt.plot(x, y, label="Estimated state")
+            plt.scatter(x, ry, label="Real state", color="black")
+
+            if ii == 0:
+                plt.legend(loc=loc)
         self.__fullScreen()

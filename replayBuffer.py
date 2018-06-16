@@ -98,6 +98,7 @@ class ReplayBuffer():
     def slice(self, l):
         (x, u, y) = ([], [], [])
         for (a, b) in l:
+            print("Cutting", (a, b))
             r = range(a, b)
             x += [self.x[i] for i in r]
             u += [self.u[i] for i in r]

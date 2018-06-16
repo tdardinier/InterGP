@@ -8,9 +8,10 @@ class Predictor(predictor.Predictor):
 
     def __init__(self, n=4, m=1):
         super().__init__(n, m)
-        self.name = "GP"
+        self.name = "FNGP"
         self.std = True
-        self.each_time = False
+        self.separated = True
+        self.n = n
 
     def getDistance(self, xu1, xu2):
         return np.linalg.norm(xu1 - xu2)
@@ -48,8 +49,14 @@ class Predictor(predictor.Predictor):
         return X, Y
 
     def train(self):
-        if not self.each_time:
-            (X, Y) = self.getXY()
+        (X, Y) = self.getXY()
+        if self.separated:
+            self.gp = []
+            for i in range(self.n):
+                self.gp.append(tools.GaussianProcesses())
+                y = np.matrix([[Y[k, i]] for k in range(len(Y))])
+                self.gp[i].train(X, y)
+        else:
             self.gp = tools.GaussianProcesses()
             self.gp.train(X, Y)
 
@@ -67,17 +74,26 @@ class Predictor(predictor.Predictor):
 
     def predict(self, xx, uu):
         xu = np.vstack([xx, uu]).T
-        if self.each_time:
-            # XUY = self.getClosestNeighboursXU(xu)
-            XUY = self.getClosestNeighbours(xx.T)
-            XU = self.concat([self.extractXU(x) for x in XUY])
-            Y = self.concat([x[2].T for x in XUY])
-            gp = tools.GaussianProcesses()
-            gp.train(XU, Y)
-            y, sigma = gp.predict(xu)
+        # if self.each_time:
+        # XUY = self.getClosestNeighboursXU(xu)
+        # XUY = self.getClosestNeighbours(xx.T)
+        # XU = self.concat([self.extractXU(x) for x in XUY])
+        # Y = self.concat([x[2].T for x in XUY])
+        # gp = tools.GaussianProcesses()
+        # gp.train(XU, Y)
+        # y, sigma = gp.predict(xu)
+        if self.separated:
+            y = []
+            sigma = []
+            for pred in self.gp:
+                yy, ssigma = pred.predict(xu)
+                y.append([yy.item(0)])
+                sigma.append(ssigma.item(0))
+            y = np.matrix(y)
+            sigma = np.matrix([sigma])
         else:
             y, sigma = self.gp.predict(xu)
-        y = y.T
+            y = y.T
         if self.std:
             return y, sigma
         return y
