@@ -13,7 +13,9 @@ def k(x, y):
     return np.exp(-0.5 * s)
 
 
-def trainGP(n=100):
+def trainGP(n=100, debug=True):
+
+    np.random.seed(8)
 
     def f(x):
         return x[0] * x[1]
@@ -21,7 +23,7 @@ def trainGP(n=100):
     X = [[np.random.rand() * 10, np.random.rand() * 10] for i in range(100)]
     Y = [f(xx) for xx in X]
 
-    gp = GP(k, 0, n=2, m=0)
+    gp = GP(k, 0, n=2, m=0, debug=debug)
     gp.fit(X, Y)
 
     return gp
@@ -32,12 +34,27 @@ def testSmallGP(x=2, y=2, noise=0.1, inter=[3.5, 4.5]):
     return gp.computePik([[(x - noise, x + noise), (y - noise, y + noise)]], inter)
 
 
-def testCompGP(x=2, y=2, noise=0.01, inter=[3.8, 4.2]):
-    gp = trainGP()
+def testCompGP(x=2, y=2, noise=0.01, inter=[3.8, 4.2], zero=True, debug=True):
+    gp = trainGP(debug=debug)
     S_0 = [(1, 1), (2, 2)]
     S_1 = [(2 - noise, 2 + noise), (1 - noise, 1 + noise)]
+    S_2 = [(x - noise, x + 2 * noise), (y - noise, y + 2 * noise)]
+    S_3 = [(x - noise, x + noise), (y - noise, y + noise)]
+    if zero:
+        print("Should give 0", gp.computePik([S_0, S_1, S_2, S_3], inter))
+    else:
+        print("Should give 1", gp.computePik([S_0, S_1, S_3], inter))
+
+
+def testSynthesizer(x=2, y=2, noise=0.1, p=0.95, debug=True, zero=True):
+    gp = trainGP(debug=debug)
+    S_0 = [(x, x), (1, 1)]
+    S_1 = [(x - noise, x + 2 * noise), (y - noise, y + 2 * noise)]
     S_2 = [(x - noise, x + noise), (y - noise, y + noise)]
-    return gp.computePik([S_0, S_1, S_2], inter)
+    if zero:
+        print(gp.synthesizeSet([S_0, S_1, S_2], p))
+    else:
+        print(gp.synthesizeSet([S_0, S_2], p))
 
 
-print(testSmallGP())
+# print(testSmallGP())

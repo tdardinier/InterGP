@@ -5,7 +5,7 @@ from scipy.stats import norm
 
 class GP:
 
-    def __init__(self, k, i, n, m=1):
+    def __init__(self, k, i, n, m=1, debug=True):
 
         self.k = k  # kernel function
         self.i = i  # ith component
@@ -15,6 +15,8 @@ class GP:
         self.X = None
         self.Y = None
         self.N = None
+
+        self.debug = debug
 
     def __generateMatrixCov(self, X1, X2):
         m = []
@@ -45,7 +47,8 @@ class GP:
         MU = K_star * self.A
         SIGMA = self.__generateMatrixCov(xs, xs) - K_star * self.B * K_star.T
 
-        print("BIG MU SIGMA", MU, SIGMA)
+        if self.debug:
+            print("BIG MU SIGMA", MU, SIGMA)
 
         MU_1 = MU[np.ix_(range(k-1))]
         MU_2 = MU[np.ix_([k-1])]
@@ -63,14 +66,19 @@ class GP:
         return mu.item(0), sigma.item(0)
 
     def __unpack(self, xx):
-        print("UNPACK", xx)
         length = self.n + self.m
         k = len(xx) // length
         x = [[xx[i * length + j] for j in range(length)] for i in range(k)]
+        if self.debug:
+            print("UNPACKED", x)
         return x
 
+    def __getAlpha(self, p=0.95):
+        return norm.ppf(0.5 * (1. + p))
+
     def __createM(self, p=0.95, bigM=True):
-        alpha = [norm.ppf(0.5 * (1. + p))]  # array so nonlocal
+        alpha = [self.__getAlpha(p)]  # array so nonlocal
+        print("ALPHA", alpha[0])
 
         if bigM:
             def f(packed_xs):
@@ -98,7 +106,8 @@ class GP:
         def f(packed_xs):
             xs = self.__unpack(packed_xs)
             mu, sigma = self.__extractMuSigma(xs)
-            print("MU, SIGMA", mu, sigma)
+            if self.debug:
+                print("MU, SIGMA", mu, sigma)
             p = self.__probInter(mu, sigma, inter)
             return p
 
@@ -159,11 +168,27 @@ class GP:
 
         return x, y
 
+    def __maximize(self, f, start, bounds, N=1000):
+
+        def new_f(x):
+            return - f(x)
+
+        x, y = self.__minimize(new_f, start, bounds, N=N)
+        return x, -y
+
+    def __description(self, S):
+        print("This sequence of sets:", S)
+        y = [s[self.i] for s in S]
+        for i in range(len(S) - 1):
+            print(str(S[i]) + " -> " + str(y[i+1]))
+
     def computePik(self, S, inter):
         # S = [S_0, S_1, ..., S_{k-1}]
         # S_0 is a singleton containing x_0
         # S_i = [S_i^0, ..., S_i^n]
         # S_i^j = (a, b)
+
+        self.__description(S)
 
         f = self.__createComputeFixedPik(inter)
         start = self.__startingPointFromSets(S)
@@ -171,21 +196,27 @@ class GP:
         x, y = self.__minimize(f, start, bounds)
         return f, x, y
 
-    # ---------------------- TODO ---------------------------
+    def synthesizeSet(self, S, p=0.95):
+        # S = [S_0, S_1, ..., S_{k-1}]
+        # S_0 is a singleton containing x_0
+        # S_i = [S_i^0, ..., S_i^n]
+        # S_i^j = (a, b)
 
-#     def predictState(self, bounds, p=0.95):
-#
-#         print("Proba " + str(p) + " -> " + str(alpha))
-#
-#         def m(x):
-#             return mu(x) - alpha * delta(x)
-#
-#         def M(x):
-#             return mu(x) + alpha * delta(x)
-#
-#         def minusM(x):
-#             return - M(x)
-#
+        self.__description(S)
+
+        m = self.__createM(p, bigM=False)
+        M = self.__createM(p, bigM=False)
+
+        start = self.__startingPointFromSets(S)
+        bounds = self.__packSets(S)
+        a = self.__minimize(m, start, bounds)
+        b = self.__maximize(M, start, bounds)
+
+        print("Resulting set: ", [a, b])
+
+        return [a[1], b[1]]
+
+
 #         x0 = np.array([0.5 * (x[0] + x[1]) for x in bounds])
 #         xa = fmin_tnc(m, x0, approx_grad=True, bounds=bounds)
 #         xb = fmin_tnc(minusM, x0, approx_grad=True, bounds=bounds)
