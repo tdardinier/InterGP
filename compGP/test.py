@@ -32,4 +32,12 @@ def testSmallGP(x=2, y=2, noise=0.1, inter=[3.5, 4.5]):
     return gp.computePik([[(x - noise, x + noise), (y - noise, y + noise)]], inter)
 
 
+def testCompGP(x=2, y=2, noise=0.01, inter=[3.8, 4.2]):
+    gp = trainGP()
+    S_0 = [(1, 1), (2, 2)]
+    S_1 = [(2 - noise, 2 + noise), (1 - noise, 1 + noise)]
+    S_2 = [(x - noise, x + noise), (y - noise, y + noise)]
+    return gp.computePik([S_0, S_1, S_2], inter)
+
+
 print(testSmallGP())

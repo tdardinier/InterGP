@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import fmin_tnc
+from scipy.optimize import minimize
 from scipy.stats import norm
 
 
@@ -26,7 +26,6 @@ class GP:
         return np.matrix(m)
 
     def __probInter(self, mu=0, std=1, inter=[-1.96, 1.96]):
-        print("Prob", mu, std, inter)
         return norm.cdf(inter[1], mu, std) - norm.cdf(inter[0], mu, std)
 
     def __preCompute(self):
@@ -46,6 +45,8 @@ class GP:
         MU = K_star * self.A
         SIGMA = self.__generateMatrixCov(xs, xs) - K_star * self.B * K_star.T
 
+        print("BIG MU SIGMA", MU, SIGMA)
+
         MU_1 = MU[np.ix_(range(k-1))]
         MU_2 = MU[np.ix_([k-1])]
 
@@ -55,7 +56,7 @@ class GP:
         SIGMA_22 = SIGMA[np.ix_([k-1], [k-1])]
 
         prod = SIGMA_21 * np.linalg.inv(SIGMA_11)
-        x = np.matrix([xx.item(self.i) for xx in xs[1:]]).T
+        x = np.matrix([xx[self.i] for xx in xs[1:]]).T
         mu = MU_2 + prod * (x - MU_1)
         sigma = SIGMA_22 - prod * SIGMA_12
 
@@ -98,7 +99,8 @@ class GP:
             xs = self.__unpack(packed_xs)
             mu, sigma = self.__extractMuSigma(xs)
             print("MU, SIGMA", mu, sigma)
-            return self.__probInter(mu, sigma, inter)
+            p = self.__probInter(mu, sigma, inter)
+            return p
 
         return f
 
@@ -137,21 +139,23 @@ class GP:
 
         self.__preCompute()
 
-    def __minimize(self, f, start, bounds, N=1000, iter=10):
+    def __minimize(self, f, start, bounds, N=1000):
         # TODO
 
         x, y = start, f(start)
 
-        for _ in range(iter):
-            for _ in range(N):
-                xx = [np.random.uniform(inter[0], inter[1]) for inter in bounds]
-                yy = f(xx)
-                if yy <= y:
-                    x, y = xx, yy
-            r = fmin_tnc(f, x, approx_grad=True, bounds=bounds)
-            xx, yy = r[0], f(r[0])
-            if yy < y:
-                x, y = xx, yy
+        def compare(x, y, xx):
+            yy = f(xx)
+            if yy <= y:
+                return xx, yy
+            return x, y
+
+        for _ in range(N):
+            xx = [np.random.uniform(inter[0], inter[1]) for inter in bounds]
+            x, y = compare(x, y, xx)
+
+        r = minimize(f, x, bounds=bounds)
+        x, y = compare(x, y, r['x'])
 
         return x, y
 
@@ -163,10 +167,7 @@ class GP:
 
         f = self.__createComputeFixedPik(inter)
         start = self.__startingPointFromSets(S)
-        print(start)
-        print("FIRST TEST", f(start))
         bounds = self.__packSets(S)
-        print("BOUNDS", bounds)
         x, y = self.__minimize(f, start, bounds)
         return f, x, y
 
