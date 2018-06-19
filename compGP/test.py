@@ -1,5 +1,6 @@
 from gp import GP
 import numpy as np
+from compGP import CompGP
 
 
 # x : n * 1, y : n * 1
@@ -34,7 +35,7 @@ def testSmallGP(x=2, y=2, noise=0.1, inter=[3.5, 4.5]):
     return gp.computePik([[(x - noise, x + noise), (y - noise, y + noise)]], inter)
 
 
-def testCompGP(x=2, y=2, noise=0.01, inter=[3.8, 4.2], zero=True, debug=True):
+def testGPComposed(x=2, y=2, noise=0.01, inter=[3.8, 4.2], zero=True, debug=True):
     gp = trainGP(debug=debug)
     S_0 = [(1, 1), (2, 2)]
     S_1 = [(2 - noise, 2 + noise), (1 - noise, 1 + noise)]
@@ -57,4 +58,73 @@ def testSynthesizer(x=2, y=2, noise=0.1, p=0.95, debug=True, zero=True):
         print(gp.synthesizeSet([S_0, S_2], p))
 
 
-# print(testSmallGP())
+def trainCompGP(n=200, debug=True):
+
+    np.random.seed(8)
+
+    def f(x, u):
+        return [x[0] * x[1] / 1.8, x[0] * x[1] / 1.8]
+
+    X = [[np.random.rand() * 10, np.random.rand() * 10] for i in range(100)]
+    U = [[np.random.rand() * 0] for i in range(100)]
+    Y = [f(xx, u) for xx, u in zip(X, U)]
+
+    cgp = CompGP(k, 2, 1, debug=debug)
+
+    cgp.fit(X, U, Y)
+
+    return cgp
+
+
+def testCompGP(x=2, y=2, noise=0.1, p=0.95, debug=False):
+
+    cgp = trainCompGP(debug=debug)
+    S_0 = [(x, x), (1, 1)]
+    U_0 = [0]
+    S_1 = [(x - noise, x + noise), (y - noise, y + noise)]
+    U_1 = [0]
+
+    S = [S_0, S_1]
+    U = [U_0, U_1]
+
+    S_2 = cgp.synthesizeNextSet(S, U, p)
+
+    print("Prob:", cgp.computeProb(S, U, S_2))
+    print("S_2:", S_2)
+
+
+def smallTestCompGP(x=2, y=2, noise=0.1, p=0.95, debug=False):
+
+    cgp = trainCompGP(debug=debug)
+    S_0 = [(x - noise, x + noise), (y - noise, y + noise)]
+    U_0 = [0]
+
+    S = [S_0]
+    U = [U_0]
+
+    S_2 = cgp.synthesizeNextSet(S, U, p)
+
+    print("Prob:", cgp.computeProb(S, U, S_2))
+    print("S_2:", S_2)
+
+
+def doubleTestCompGP(x=1.1, y=1.1, noise=0.1, p=0.95, debug=False, steps=5):
+
+    cgp = trainCompGP(debug=debug)
+    S_0 = [(x, x), (y, y)]
+
+    S = [S_0]
+    U = [[0]]
+
+    probs = []
+
+    for _ in range(steps):
+        new_S = cgp.synthesizeNextSet(S, U, p)
+        probs.append(cgp.computeProb(S, U, new_S))
+        S.append(new_S)
+        U.append([0])
+
+    for i in range(steps):
+        print(i)
+        print(probs[i])
+        print(S[i])

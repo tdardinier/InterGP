@@ -18,6 +18,60 @@ class GP:
 
         self.debug = debug
 
+    def fit(self, X, Y):
+
+        # X = [X[0], ..., X[N-1]] -> dim n (array even if n == 1)
+        # Y = [Y[0], ..., Y[N-1]] -> scalars
+        # TODO: optim?
+
+        assert (len(X) == len(Y)), "Wrong sizes X Y"
+
+        self.X = X
+        self.Y = Y
+        self.N = len(self.Y)
+
+        self.__preCompute()
+
+    def computePik(self, S, inter):
+        # S = [S_0, S_1, ..., S_{k-1}]
+        # S_0 is a singleton containing x_0
+        # S_i = [S_i^0, ..., S_i^n]
+        # S_i^j = (a, b)
+
+        self.__description(S)
+
+        f, approx_f = self.__createComputeFixedPik(inter)
+        start = self.__startingPointFromSets(S)
+        bounds = self.__packSets(S)
+        x, y = self.__minimize(f, start, bounds)
+        xx, yy = self.__minimize(approx_f, start, bounds)
+        print("REAL F", x, f(x))
+        print("APPROX F", xx, f(xx))
+        yy = f(xx)
+        if yy < y:
+            x, y = xx, yy
+        return f, x, y
+
+    def synthesizeSet(self, S, p=0.95):
+        # S = [S_0, S_1, ..., S_{k-1}]
+        # S_0 is a singleton containing x_0
+        # S_i = [S_i^0, ..., S_i^n]
+        # S_i^j = (a, b)
+
+        self.__description(S)
+
+        m = self.__createM(p, bigM=False)
+        M = self.__createM(p, bigM=True)
+
+        start = self.__startingPointFromSets(S)
+        bounds = self.__packSets(S)
+        a = self.__minimize(m, start, bounds)
+        b = self.__maximize(M, start, bounds)
+
+        print("Resulting set: ", [a, b])
+
+        return [a[1], b[1]]
+
     def __generateMatrixCov(self, X1, X2):
         m = []
         for x1 in X1:
@@ -86,14 +140,14 @@ class GP:
                 # x_i is a concatenation of the state and the action
                 xs = self.__unpack(packed_xs)
                 mu, sigma = self.__extractMuSigma(xs)
-                return mu - alpha[0] * sigma
+                return mu + alpha[0] * sigma
         else:
             def f(packed_xs):
                 # xs = [x_0, ..., x_{k-1}]
                 # x_i is a concatenation of the state and the action
                 xs = self.__unpack(packed_xs)
                 mu, sigma = self.__extractMuSigma(xs)
-                return mu + alpha[0] * sigma
+                return mu - alpha[0] * sigma
 
         return f
 
@@ -111,7 +165,18 @@ class GP:
             p = self.__probInter(mu, sigma, inter)
             return p
 
-        return f
+        def approx_f(packed_xs):
+            xs = self.__unpack(packed_xs)
+            mu, sigma = self.__extractMuSigma(xs)
+            if self.debug:
+                print("MU, SIGMA", mu, sigma)
+            p = self.__probInter(mu, sigma, inter)
+            p *= 1000
+            p -= ((inter[0] - mu) / sigma) ** 2
+            p -= ((inter[1] - mu) / sigma) ** 2
+            return p
+
+        return f, approx_f
 
     def __getCenter(self, s):
         # s = S_i = [(a_1, b_1), ..., (a_{n+m}, b_{n+m})]
@@ -133,20 +198,6 @@ class GP:
         for s in S:
             x += self.__getCenter(s)
         return np.array(x)
-
-    def fit(self, X, Y):
-
-        # X = [X[0], ..., X[N-1]] -> dim n (array even if n == 1)
-        # Y = [Y[0], ..., Y[N-1]] -> scalars
-        # TODO: optim?
-
-        assert (len(X) == len(Y)), "Wrong sizes X Y"
-
-        self.X = X
-        self.Y = Y
-        self.N = len(self.Y)
-
-        self.__preCompute()
 
     def __minimize(self, f, start, bounds, N=1000):
         # TODO
@@ -181,46 +232,3 @@ class GP:
         y = [s[self.i] for s in S]
         for i in range(len(S) - 1):
             print(str(S[i]) + " -> " + str(y[i+1]))
-
-    def computePik(self, S, inter):
-        # S = [S_0, S_1, ..., S_{k-1}]
-        # S_0 is a singleton containing x_0
-        # S_i = [S_i^0, ..., S_i^n]
-        # S_i^j = (a, b)
-
-        self.__description(S)
-
-        f = self.__createComputeFixedPik(inter)
-        start = self.__startingPointFromSets(S)
-        bounds = self.__packSets(S)
-        x, y = self.__minimize(f, start, bounds)
-        return f, x, y
-
-    def synthesizeSet(self, S, p=0.95):
-        # S = [S_0, S_1, ..., S_{k-1}]
-        # S_0 is a singleton containing x_0
-        # S_i = [S_i^0, ..., S_i^n]
-        # S_i^j = (a, b)
-
-        self.__description(S)
-
-        m = self.__createM(p, bigM=False)
-        M = self.__createM(p, bigM=False)
-
-        start = self.__startingPointFromSets(S)
-        bounds = self.__packSets(S)
-        a = self.__minimize(m, start, bounds)
-        b = self.__maximize(M, start, bounds)
-
-        print("Resulting set: ", [a, b])
-
-        return [a[1], b[1]]
-
-
-#         x0 = np.array([0.5 * (x[0] + x[1]) for x in bounds])
-#         xa = fmin_tnc(m, x0, approx_grad=True, bounds=bounds)
-#         xb = fmin_tnc(minusM, x0, approx_grad=True, bounds=bounds)
-#
-#         print(xa, xb)
-#
-#         return (m(xa[0]), M(xb[0]))
