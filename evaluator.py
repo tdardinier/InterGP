@@ -17,6 +17,9 @@ class Evaluator:
 
     def sampleValidate(self, c=10000, n_test=1000, removeX=False):
 
+        sensor_corruption = False
+        perturbation_env = True
+
         buf = self.buf
         # buf = buf.shuffle()
         buf = buf.cut(c + n_test)
@@ -32,16 +35,12 @@ class Evaluator:
         train = buf.slice([(0, c)])
         test = buf.slice([(c, c + n_test)])
 
-        sensor_corruption = False
-
         if sensor_corruption:
             id_corrupts = [20, 40]
             for id_corrupt in id_corrupts:
                 xx = np.matrix([[np.random.normal()] for _ in range(n)])
                 test.y[id_corrupt] = xx
                 test.x[id_corrupt+1] = xx
-
-        perturbation_env = True
 
         if perturbation_env:
             aa = 21
