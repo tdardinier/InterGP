@@ -18,7 +18,7 @@ class Evaluator:
     def sampleValidate(self, c=10000, n_test=1000, removeX=False):
 
         sensor_corruption = False
-        perturbation_env = True
+        perturbation_env = False
 
         buf = self.buf
         # buf = buf.shuffle()

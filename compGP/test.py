@@ -1,6 +1,7 @@
-from gp import GP
+from compGP.gp import GP
 import numpy as np
-from compGP import CompGP
+from compGP.compGP import CompGP
+import tools
 
 
 # x : n * 1, y : n * 1
@@ -58,18 +59,18 @@ def testSynthesizer(x=2, y=2, noise=0.1, p=0.95, debug=True, zero=True):
         print(gp.synthesizeSet([S_0, S_2], p))
 
 
-def trainCompGP(n=200, debug=True):
+def trainCompGP(n=200, debug=True, scipy=False):
 
     np.random.seed(8)
 
     def f(x, u):
-        return [x[0] * x[1] / 1.8, x[0] * x[1] / 1.8]
+        return [x[0] + 0.1 * x[1], x[1] - 0.1 * x[0]]
 
     X = [[np.random.rand() * 10, np.random.rand() * 10] for i in range(100)]
     U = [[np.random.rand() * 0] for i in range(100)]
     Y = [f(xx, u) for xx, u in zip(X, U)]
 
-    cgp = CompGP(k, 2, 1, debug=debug)
+    cgp = CompGP(k, 2, 1, debug=debug, scipy=scipy)
 
     cgp.fit(X, U, Y)
 
@@ -108,9 +109,9 @@ def smallTestCompGP(x=2, y=2, noise=0.1, p=0.95, debug=False):
     print("S_2:", S_2)
 
 
-def doubleTestCompGP(x=1.1, y=1.1, noise=0.1, p=0.95, debug=False, steps=5):
+def doubleTestCompGP(x=1.1, y=1.1, noise=0.1, p=0.95, debug=False, steps=5, scipy=False):
 
-    cgp = trainCompGP(debug=debug)
+    cgp = trainCompGP(debug=debug, scipy=scipy)
     S_0 = [(x, x), (y, y)]
 
     S = [S_0]
@@ -127,4 +128,18 @@ def doubleTestCompGP(x=1.1, y=1.1, noise=0.1, p=0.95, debug=False, steps=5):
     for i in range(steps):
         print(i)
         print(probs[i])
-        print(S[i])
+        print(S[i+1])
+
+
+def scipyGP():
+
+    def f(x):
+        return x[0] * x[1]
+
+    X = [[np.random.rand() * 10, np.random.rand() * 10] for i in range(100)]
+    Y = [f(xx) for xx in X]
+
+    gp = tools.GaussianProcesses()
+    gp.train(X, Y)
+
+    return gp

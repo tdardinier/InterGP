@@ -1,15 +1,15 @@
-from gp import GP
+from compGP.gp import GP
 from copy import deepcopy
 
 
 class CompGP:
 
-    def __init__(self, k, n, m=1, debug=False):
+    def __init__(self, k, n, m=1, debug=False, scipy=False):
 
         self.n = n
         self.m = m
 
-        self.GPs = [GP(k, i, n, m, debug=debug) for i in range(n)]
+        self.GPs = [GP(k, i, n, m, debug=debug, scipy=scipy) for i in range(n)]
 
     def fit(self, X, U, Y):
         # X = [X_0, ..., X_{N-1}]
@@ -52,7 +52,13 @@ class CompGP:
         print("PP", pp)
 
         for i in range(self.n):
-            next_S.append(self.GPs[i].synthesizeSet(SS, pp))
+            inter = self.GPs[i].synthesizeSet(SS, pp)
+            print("-" * 100)
+            print("Generated:", inter)
+            print("Prob:", self.GPs[i].computePik(SS, inter)[2])
+            print("To compare with", pp)
+            print("-" * 100)
+            next_S.append(inter)
 
         return next_S
 

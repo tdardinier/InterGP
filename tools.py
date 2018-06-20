@@ -3,6 +3,7 @@ import random as rd
 import scipy.linalg
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+# from sklearn.gaussian_process.kernels import Matern, ConstantKernel
 import numpy as np
 
 
@@ -109,11 +110,16 @@ class GaussianProcesses():
 
     def __init__(self):
         self.kernel = C(1.0, (1e-3, 1e3)) * RBF(1, (1e-2, 1e2))
+        # self.kernel = Matern(length_scale=2, nu=3/2)
 
     def train(self, X, Y):
-        self.gp = GaussianProcessRegressor(kernel=self.kernel,
-                                           n_restarts_optimizer=9)
+        self.gp = GaussianProcessRegressor(
+            # kernel=self.kernel, n_restarts_optimizer=9, normalize_y=True)
+            kernel=self.kernel, n_restarts_optimizer=9)
         self.gp.fit(X, Y)
+
+    def predictCov(self, x):
+        return self.gp.predict(x, return_cov=True)
 
     def predict(self, x):
         return self.gp.predict(x, return_std=True)

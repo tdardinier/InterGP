@@ -1,36 +1,31 @@
 import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import norm
+from tools import GaussianProcesses as SCGP
 from math import sqrt
-from main.coreGP import CoreGP
-
-epsilon = 0.00000001
 
 
 class GP:
 
-    def __normalizeSigma(self, sigma):
-        if sigma < 0.1 * epsilon:
-            print("ALERT: SMALL SIGMA", sigma)
-            return (np.random.random() + 0.1) * epsilon
-        return sigma
+    def __init__(self, k, i, n, m=1, debug=True):
 
-    def __init__(self, k, i, n, m=1, debug=True, scipy=False):
-
-        self.k = k  # kernel function
+        # self.k = k  # kernel function TODO
         self.i = i  # ith component
         self.n = n  # dimension of state space
         self.m = m  # dimension of action space
 
-        self.X = None
-        self.Y = None
-        self.N = None
-
-        self.gp = CoreGP(scipy=scipy, k=k)
+        self.gp = SCGP()
 
         self.debug = debug
 
     def fit(self, X, Y):
+
+        # X = [X[0], ..., X[N-1]] -> dim n (array even if n == 1)
+        # Y = [Y[0], ..., Y[N-1]] -> scalars
+        # TODO: optim?
+
+        assert (len(X) == len(Y)), "Wrong sizes X Y"
+
         self.gp.train(X, Y)
 
     def computePik(self, S, inter):
@@ -39,15 +34,15 @@ class GP:
         # S_i = [S_i^0, ..., S_i^n]
         # S_i^j = (a, b)
 
-        # self.__description(S)
+        self.__description(S)
 
         f, approx_f = self.__createComputeFixedPik(inter)
         start = self.__startingPointFromSets(S)
         bounds = self.__packSets(S)
         x, y = self.__minimize(f, start, bounds)
         xx, yy = self.__minimize(approx_f, start, bounds)
-        # print("REAL F", x, f(x))
-        # print("APPROX F", xx, f(xx))
+        print("REAL F", x, f(x))
+        print("APPROX F", xx, f(xx))
         yy = f(xx)
         if yy < y:
             x, y = xx, yy
@@ -59,7 +54,7 @@ class GP:
         # S_i = [S_i^0, ..., S_i^n]
         # S_i^j = (a, b)
 
-        # self.__description(S)
+        self.__description(S)
 
         m = self.__createM(p, bigM=False)
         M = self.__createM(p, bigM=True)
@@ -69,7 +64,7 @@ class GP:
         a = self.__minimize(m, start, bounds)
         b = self.__maximize(M, start, bounds)
 
-        # print("Resulting set: ", [a, b])
+        print("Resulting set: ", [a, b])
 
         return [a[1], b[1]]
 
@@ -81,16 +76,14 @@ class GP:
         # x_i = np.matrix([[], ..., []])
         # x_i is a concatenation of state and action
 
-        k = len(xs)
+        MU, SIGMA = self.gp.predictCov(xs)
+        MU = np.matrix(MU).T
+        SIGMA = np.matrix(SIGMA).T  # TODO
 
-        MU, SIGMA = self.gp.predict(xs, return_cov=True)
+        k = len(xs)
 
         if self.debug:
             print("BIG MU SIGMA", MU, SIGMA)
-            print("k", k)
-
-        if k == 1:
-            return MU.item(0), SIGMA.item(0)
 
         MU_1 = MU[np.ix_(range(k-1))]
         MU_2 = MU[np.ix_([k-1])]
@@ -102,18 +95,10 @@ class GP:
 
         prod = SIGMA_21 * np.linalg.inv(SIGMA_11)
         x = np.matrix([xx[self.i] for xx in xs[1:]]).T
-
-        if self.debug:
-            print("x", x)
-
         mu = MU_2 + prod * (x - MU_1)
         sigma = SIGMA_22 - prod * SIGMA_12
 
-        if self.debug:
-            print("small mu sigma", mu, sigma)
-
-        # TODO detect epsilon
-        return mu.item(0), self.__normalizeSigma(sigma.item(0))
+        return mu.item(0), sigma.item(0)
 
     def __unpack(self, xx):
         length = self.n + self.m
@@ -128,7 +113,7 @@ class GP:
 
     def __createM(self, p=0.95, bigM=True):
         alpha = [self.__getAlpha(p)]  # array so nonlocal
-        # print("ALPHA", alpha[0])
+        print("ALPHA", alpha[0])
 
         if bigM:
             def f(packed_xs):
@@ -196,6 +181,8 @@ class GP:
         return np.array(x)
 
     def __minimize(self, f, start, bounds, N=1000):
+        # TODO
+
         x, y = start, f(start)
 
         def compare(x, y, xx):
