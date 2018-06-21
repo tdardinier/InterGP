@@ -2,6 +2,7 @@ import predictor
 import numpy as np
 # from matplotlib import pyplot as plt
 import tools
+from main.coreGP import CoreGP
 
 
 class Predictor(predictor.Predictor):
@@ -53,11 +54,13 @@ class Predictor(predictor.Predictor):
         if self.separated:
             self.gp = []
             for i in range(self.n):
-                self.gp.append(tools.GaussianProcesses())
+                # self.gp.append(tools.GaussianProcesses())
+                self.gp.append(CoreGP())
                 y = np.matrix([[Y[k, i]] for k in range(len(Y))])
                 self.gp[i].train(X, y)
         else:
-            self.gp = tools.GaussianProcesses()
+            # self.gp = tools.GaussianProcesses()
+            self.gp = CoreGP()
             self.gp.train(X, Y)
 
     def concat(self, XU):

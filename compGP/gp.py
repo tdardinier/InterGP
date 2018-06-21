@@ -4,15 +4,26 @@ from scipy.stats import norm
 from math import sqrt
 from main.coreGP import CoreGP
 
-epsilon = 0.00000001
+epsilon = 0.00000000000001
+epsilon_f = 0.000001
+seed = 42
 
 
 class GP:
 
+    def __noisifyMatrix(self, M):
+        np.random.seed(seed)
+        n, m = M.shape
+        r = np.matrix([[np.random.rand() for _ in range(m)] for _ in range(n)])
+        r *= epsilon
+        return M + r
+
     def __normalizeSigma(self, sigma):
+        np.random.seed(seed)
         if sigma < 0.1 * epsilon:
-            print("ALERT: SMALL SIGMA", sigma)
-            return (np.random.random() + 0.1) * epsilon
+            if self.debug:
+                print("ALERT: SMALL SIGMA", sigma)
+            return (np.random.rand() + 0.1) * epsilon
         return sigma
 
     def __init__(self, k, i, n, m=1, debug=True, scipy=False):
@@ -44,13 +55,21 @@ class GP:
         f, approx_f = self.__createComputeFixedPik(inter)
         start = self.__startingPointFromSets(S)
         bounds = self.__packSets(S)
+
+        # xx, yy = self.__minimize(approx_f, start, bounds)
         x, y = self.__minimize(f, start, bounds)
-        xx, yy = self.__minimize(approx_f, start, bounds)
-        # print("REAL F", x, f(x))
-        # print("APPROX F", xx, f(xx))
-        yy = f(xx)
-        if yy < y:
-            x, y = xx, yy
+
+        if self.debug:
+            print("bounds", bounds)
+            print("inter", inter)
+            print("bounds", bounds)
+            print("REAL F", x, f(x), y)
+            # print("APPROX F", xx, f(xx), yy)
+
+        # yy = f(xx)
+        y = f(x)
+        # if yy < y:
+        #    x, y = xx, yy
         return f, x, y
 
     def synthesizeSet(self, S, p=0.95):
@@ -66,14 +85,23 @@ class GP:
 
         start = self.__startingPointFromSets(S)
         bounds = self.__packSets(S)
+        if self.debug:
+            print("synthe: bounds", bounds)
         a = self.__minimize(m, start, bounds)
         b = self.__maximize(M, start, bounds)
+
+        # self.debug = True
+        # if self.debug:
+        # print("MIN:", m(a[0]))
+        # self.debug = False
 
         # print("Resulting set: ", [a, b])
 
         return [a[1], b[1]]
 
     def __probInter(self, mu=0, sigma=1, inter=[-1.96, 1.96]):
+        if self.debug:
+            print("prob", mu, sigma, inter)
         return norm.cdf(inter[1], mu, sqrt(sigma)) - norm.cdf(inter[0], mu, sqrt(sigma))
 
     def __extractMuSigma(self, xs):
@@ -92,7 +120,7 @@ class GP:
         if k == 1:
             return MU.item(0), SIGMA.item(0)
 
-        MU_1 = MU[np.ix_(range(k-1))]
+        MU_1 = MU[np.ix_(range(k-1))].reshape([k-1, 1])
         MU_2 = MU[np.ix_([k-1])]
 
         SIGMA_11 = SIGMA[np.ix_(range(k-1), range(k-1))]
@@ -100,10 +128,17 @@ class GP:
         SIGMA_21 = SIGMA[np.ix_([k-1], range(k-1))]
         SIGMA_22 = SIGMA[np.ix_([k-1], [k-1])]
 
-        prod = SIGMA_21 * np.linalg.inv(SIGMA_11)
+        prod = SIGMA_21 * np.linalg.inv(self.__noisifyMatrix(SIGMA_11))
         x = np.matrix([xx[self.i] for xx in xs[1:]]).T
 
-        if self.debug:
+        if self.debug and False:
+            print("\nMU 2\n", MU_2)
+            print("\nSIGMA_21\n", SIGMA_21)
+            print("\nSIGMA_11\n", SIGMA_11)
+            print("\nPROD\n", prod)
+            print("\nMU_1\n", MU_1)
+            print("\nx - MU_1\n", x - MU_1)
+            print("\nprod * (x - MU_1)\n", prod * (x - MU_1))
             print("x", x)
 
         mu = MU_2 + prod * (x - MU_1)
@@ -167,9 +202,8 @@ class GP:
             if self.debug:
                 print("MU, SIGMA", mu, sigma)
             p = self.__probInter(mu, sigma, inter)
-            p *= 1000
-            p -= ((inter[0] - mu) / sigma) ** 2
-            p -= ((inter[1] - mu) / sigma) ** 2
+            p -= epsilon * ((inter[0] - mu) / sigma) ** 2
+            p -= epsilon * ((inter[1] - mu) / sigma) ** 2
             return p
 
         return f, approx_f
@@ -198,6 +232,8 @@ class GP:
     def __minimize(self, f, start, bounds, N=1000):
         x, y = start, f(start)
 
+        assert (abs(f(x) - y) <= epsilon_f)
+
         def compare(x, y, xx):
             yy = f(xx)
             if yy <= y:
@@ -205,11 +241,16 @@ class GP:
             return x, y
 
         for _ in range(N):
+            np.random.seed(seed)
             xx = [np.random.uniform(inter[0], inter[1]) for inter in bounds]
             x, y = compare(x, y, xx)
 
+        assert (abs(f(x) - y) < epsilon_f)
+
         r = minimize(f, x, bounds=bounds)
         x, y = compare(x, y, r['x'])
+
+        assert (abs(f(x) - y) < epsilon_f)
 
         return x, y
 

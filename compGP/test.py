@@ -59,18 +59,19 @@ def testSynthesizer(x=2, y=2, noise=0.1, p=0.95, debug=True, zero=True):
         print(gp.synthesizeSet([S_0, S_2], p))
 
 
-def trainCompGP(n=200, debug=True, scipy=False):
+def f_dynamic(x, u):
+    return [x[0] + 0.03 * x[1] ** 2, x[1] - 0.1 * x[0]]
+
+
+def trainCompGP(n=200, debug=True, scipy=False, f=f_dynamic, n_in=2, amp=10, m=1):
 
     np.random.seed(8)
 
-    def f(x, u):
-        return [x[0] + 0.1 * x[1], x[1] - 0.1 * x[0]]
-
-    X = [[np.random.rand() * 10, np.random.rand() * 10] for i in range(100)]
-    U = [[np.random.rand() * 0] for i in range(100)]
+    X = [[np.random.rand() * amp for _ in range(n_in)] for i in range(n)]
+    U = [[np.random.rand() * 0 for _ in range(m)] for i in range(n)]
     Y = [f(xx, u) for xx, u in zip(X, U)]
 
-    cgp = CompGP(k, 2, 1, debug=debug, scipy=scipy)
+    cgp = CompGP(k, n_in, 1, debug=debug, scipy=scipy)
 
     cgp.fit(X, U, Y)
 
@@ -90,7 +91,7 @@ def testCompGP(x=2, y=2, noise=0.1, p=0.95, debug=False):
 
     S_2 = cgp.synthesizeNextSet(S, U, p)
 
-    print("Prob:", cgp.computeProb(S, U, S_2))
+    print("Prob:", cgp.computeNextProb(S, U, S_2))
     print("S_2:", S_2)
 
 
@@ -105,7 +106,7 @@ def smallTestCompGP(x=2, y=2, noise=0.1, p=0.95, debug=False):
 
     S_2 = cgp.synthesizeNextSet(S, U, p)
 
-    print("Prob:", cgp.computeProb(S, U, S_2))
+    print("Prob:", cgp.computeNextProb(S, U, S_2))
     print("S_2:", S_2)
 
 
@@ -121,14 +122,18 @@ def doubleTestCompGP(x=1.1, y=1.1, noise=0.1, p=0.95, debug=False, steps=5, scip
 
     for _ in range(steps):
         new_S = cgp.synthesizeNextSet(S, U, p)
-        probs.append(cgp.computeProb(S, U, new_S))
+        probs.append(cgp.computeNextProb(S, U, new_S))
         S.append(new_S)
         U.append([0])
 
+    x_dynamic = [2, 2]
     for i in range(steps):
+        x_dynamic = f_dynamic(x_dynamic, [0])
+        print()
         print(i)
         print(probs[i])
         print(S[i+1])
+        print(x_dynamic)
 
 
 def scipyGP():
@@ -143,3 +148,40 @@ def scipyGP():
     gp.train(X, Y)
 
     return gp
+
+
+def simpleTestCompGP(x=1, noise=0., p=0.95, debug=False, steps=5, scipy=True):
+
+    def f(x, u):
+        return [x[0] * x[0]]
+
+    cgp = trainCompGP(debug=debug, scipy=scipy, n_in=1, f=f, amp=2, m=1)
+    S_0 = [(x, x)]
+
+    S = [S_0]
+    U = [[0]]
+
+    probs = []
+
+    for _ in range(steps):
+        new_S = cgp.synthesizeNextSet(S, U, p)
+        probs.append(cgp.computeNextProb(S, U, new_S))
+        S.append(new_S)
+        U.append([0])
+
+    for i in range(steps):
+        print(i)
+        print(probs[i])
+        print(S[i+1])
+
+
+def testCompGPAll(x=1, noise=0., p=0.95, debug=False, steps=5, scipy=True):
+
+    def f(x, u):
+        return [x[0] * x[0]]
+
+    cgp = trainCompGP(debug=debug, scipy=scipy, n_in=1, f=f, amp=2, m=1)
+
+    U = [[0] for _ in range(steps)]
+
+    S, probs = cgp.synthesizeSets([x], U, steps, p)

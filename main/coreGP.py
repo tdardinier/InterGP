@@ -1,5 +1,7 @@
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
+from sklearn.gaussian_process.kernels import WhiteKernel
+from sklearn.gaussian_process.kernels import Matern
 import numpy as np
 
 
@@ -12,6 +14,7 @@ class CoreGP():
         if self.scipy:
             self.kernel = C(1.0, (1e-3, 1e3)) * RBF(1, (1e-2, 1e2))
             # self.kernel = Matern(length_scale=2, nu=3/2)
+            self.kernel += WhiteKernel()
 
         else:
             self.k = k  # kernel function

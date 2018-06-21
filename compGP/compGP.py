@@ -49,20 +49,15 @@ class CompGP:
         pp = p ** (1. / self.n)
         SS = self.__combineSetsStatesActions(S, U)
         next_S = []
-        print("PP", pp)
 
         for i in range(self.n):
             inter = self.GPs[i].synthesizeSet(SS, pp)
-            print("-" * 100)
             print("Generated:", inter)
-            print("Prob:", self.GPs[i].computePik(SS, inter)[2])
-            print("To compare with", pp)
-            print("-" * 100)
             next_S.append(inter)
 
         return next_S
 
-    def computeProb(self, S, U, S_k):
+    def computeNextProb(self, S, U, S_k):
         # S = [S_0, ..., S_{k-1}]
         # S_0 is a singleton containing x_0
         # S_i = [S_i^0, ..., S_i^n]
@@ -79,3 +74,31 @@ class CompGP:
             p *= pp
 
         return p
+
+    def synthesizeSets(self, x_0, U, k, p):
+        # x_0 = [x_0^1, ..., x_0^n]
+
+        SS = [[(xx, xx) for xx in x_0]]
+        UU = []
+        probs = []
+
+        cum_p = 1.
+
+        for i in range(k):
+            if i == k - 1:
+                pp = p / cum_p
+            else:
+                pp = (p / cum_p) ** (.7)
+            # pp = (p / cum_p) ** (1. / (k - i))
+            print("-" * 80)
+            print("Step", i+1)
+            UU.append(U[i])
+            s = self.synthesizeNextSet(SS, UU, pp)
+            probs.append(self.computeNextProb(SS, UU, s))
+            cum_p *= probs[-1]
+            print("Aim:", pp, ", real:", probs[-1], ", cumulative", cum_p)
+            SS.append(s)
+
+        print("Total prob", cum_p, ", ", probs)
+
+        return SS[1:], probs
