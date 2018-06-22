@@ -267,3 +267,27 @@ class GP:
         y = [s[self.i] for s in S]
         for i in range(len(S) - 1):
             print(str(S[i]) + " -> " + str(y[i+1]))
+
+    def __findInterval(self, a_tilde, b_tilde, p, mu=0, sigma=1):
+
+        ssigma = sqrt(sigma)
+
+        def cdf(x):
+            return norm.cdf(x, mu, ssigma)
+
+        def ppf(pp):
+            return norm.ppf(pp, mu, ssigma)
+
+        p_tilde = cdf(b_tilde) - cdf(a_tilde)
+        if p_tilde >= p:
+            return [a_tilde, b_tilde]
+
+        da = abs(mu - a_tilde)
+        db = abs(b_tilde - mu)
+        delta = max(da, db)
+        if cdf(mu + delta) - cdf(mu - delta) >= p:
+            if da < db:
+                return [ppf(cdf(b_tilde) - p), b_tilde]
+            return [a_tilde, ppf(p + cdf(a_tilde))]
+
+        return [ppf(0.5 * (1 - p)), ppf(0.5 * (1 + p))]
