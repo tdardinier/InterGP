@@ -39,6 +39,8 @@ class GP:
 
         self.gp = CoreGP(scipy=scipy, k=k)
 
+        self.centered = False
+
         self.debug = debug
 
     def fit(self, X, Y):
@@ -80,13 +82,23 @@ class GP:
 
         # self.__description(S)
 
-        m = self.__createM(p, bigM=False)
-        M = self.__createM(p, bigM=True)
-
         start = self.__startingPointFromSets(S)
         bounds = self.__packSets(S)
         if self.debug:
             print("synthe: bounds", bounds)
+
+        if self.centered or p < 0.5:
+            m = self.__createM(p, bigM=False)
+            M = self.__createM(p, bigM=True)
+        else:
+            f_a_tilde = self.__createTilde(p, a=True)
+            f_b_tilde = self.__createTilde(p, a=False)
+            a_tilde = self.__minimize(f_a_tilde, start, bounds)[1]
+            b_tilde = self.__maximize(f_b_tilde, start, bounds)[1]
+            # print("TILDE", a_tilde, b_tilde)
+            m = self.__createMInterval(a_tilde, b_tilde, p, bigM=False)
+            M = self.__createMInterval(a_tilde, b_tilde, p, bigM=True)
+
         a = self.__minimize(m, start, bounds)
         b = self.__maximize(M, start, bounds)
 
@@ -161,6 +173,158 @@ class GP:
     def __getAlpha(self, p=0.95):
         return norm.ppf(0.5 * (1. + p))
 
+    def __getCenter(self, s):
+        # s = S_i = [(a_1, b_1), ..., (a_{n+m}, b_{n+m})]
+        return [0.5 * (ss[0] + ss[1]) for ss in s]
+
+    def __packSets(self, old_S):
+        S = []
+        for s in old_S:
+            for ss in s:
+                S.append(ss)
+        return S
+
+    def __startingPointFromSets(self, S):
+        # S = [S_0, S_1, ..., S_{k-1}]
+        # S_0 is a singleton containing x_0
+        # S_i = [S_i^1, ..., S_i^{n+m}]
+        # S_i^j = (a, b)
+        x = []
+        for s in S:
+            x += self.__getCenter(s)
+        return np.array(x)
+
+    def __sampleExtremities(self, bounds, n_iter=1000):
+        np.random.seed(42)
+
+        if n_iter == 0:
+            return []
+
+        tail = self.__sampleExtremities(bounds, n_iter - 1)
+
+        x = []
+        for (a, b) in bounds:
+            if np.random.rand() < 0.5:
+                x.append(a)
+            else:
+                x.append(b)
+
+        tail.append(x)
+
+        return tail
+
+    def __minimize(self, f, start, bounds, maxiter=100):
+        np.random.seed(42)
+
+        x, y = start, f(start)
+
+        def compare(x, y, xx):
+            yy = f(xx)
+            if yy <= y:
+                return xx, yy
+            return x, y
+
+        assert (abs(f(x) - y) < epsilon_f)
+
+        extremities = self.__sampleExtremities(bounds, n_iter=maxiter)
+
+        for xx in extremities:
+            x, y = compare(x, y, xx)
+
+        assert (abs(f(x) - y) <= epsilon_f)
+
+        for _ in range(maxiter):
+            np.random.seed(seed)
+            xx = [np.random.uniform(inter[0], inter[1]) for inter in bounds]
+            x, y = compare(x, y, xx)
+
+        assert (abs(f(x) - y) < epsilon_f)
+
+        r = minimize(f, x, bounds=bounds, options={'maxiter': maxiter})
+        x, y = compare(x, y, r['x'])
+
+        assert (abs(f(x) - y) < epsilon_f)
+
+        return x, y
+
+    def __maximize(self, f, start, bounds):
+
+        def new_f(x):
+            return - f(x)
+
+        x, y = self.__minimize(new_f, start, bounds)
+        return x, -y
+
+    def __description(self, S):
+        print("This sequence of sets:", S)
+        y = [s[self.i] for s in S]
+        for i in range(len(S) - 1):
+            print(str(S[i]) + " -> " + str(y[i+1]))
+
+    def __findInterval(self, a_tilde, b_tilde, p, mu=0, sigma=1):
+
+        assert (b_tilde >= a_tilde)
+
+        ssigma = sqrt(sigma)
+
+        def cdf(x):
+            return norm.cdf(x, mu, ssigma)
+
+        def ppf(pp):
+            return norm.ppf(pp, mu, ssigma)
+
+        p_tilde = cdf(b_tilde) - cdf(a_tilde)
+        if p_tilde >= p:
+            return [a_tilde, b_tilde]
+
+        da = abs(mu - a_tilde)
+        db = abs(b_tilde - mu)
+        delta = max(da, db)
+        if cdf(mu + delta) - cdf(mu - delta) >= p:
+            if da < db:
+                return [ppf(cdf(b_tilde) - p), b_tilde]
+            return [a_tilde, ppf(p + cdf(a_tilde))]
+
+        return [ppf(0.5 * (1 - p)), ppf(0.5 * (1 + p))]
+
+    def __createMInterval(self, a_tilde, b_tilde, p, bigM=True):
+
+        if bigM:
+            def f(packed_xs):
+                xs = self.__unpack(packed_xs)
+                mu, sigma = self.__extractMuSigma(xs)
+                (a, b) = self.__findInterval(
+                    a_tilde, b_tilde, p, mu, sigma)
+                # print("INTER", p, self.__probInter(mu, sigma, [a, b]))
+                return b
+
+        else:
+            def f(packed_xs):
+                xs = self.__unpack(packed_xs)
+                mu, sigma = self.__extractMuSigma(xs)
+                (a, b) = self.__findInterval(
+                    a_tilde, b_tilde, p, mu, sigma)
+                # print("INTER", p, self.__probInter(mu, sigma, [a, b]))
+                return a
+
+        return f
+
+    def __createTilde(self, p, a=True):
+
+        if a:
+            def f(packed_xs):
+                xs = self.__unpack(packed_xs)
+                mu, sigma = self.__extractMuSigma(xs)
+                return norm.ppf(1-p, mu, sqrt(sigma))
+
+        else:
+            def f(packed_xs):
+                xs = self.__unpack(packed_xs)
+                mu, sigma = self.__extractMuSigma(xs)
+                return norm.ppf(p, mu, sqrt(sigma))
+
+        return f
+
     def __createM(self, p=0.95, bigM=True):
         alpha = [self.__getAlpha(p)]  # array so nonlocal
         # print("ALPHA", alpha[0])
@@ -208,86 +372,4 @@ class GP:
 
         return f, approx_f
 
-    def __getCenter(self, s):
-        # s = S_i = [(a_1, b_1), ..., (a_{n+m}, b_{n+m})]
-        return [0.5 * (ss[0] + ss[1]) for ss in s]
 
-    def __packSets(self, old_S):
-        S = []
-        for s in old_S:
-            for ss in s:
-                S.append(ss)
-        return S
-
-    def __startingPointFromSets(self, S):
-        # S = [S_0, S_1, ..., S_{k-1}]
-        # S_0 is a singleton containing x_0
-        # S_i = [S_i^1, ..., S_i^{n+m}]
-        # S_i^j = (a, b)
-        x = []
-        for s in S:
-            x += self.__getCenter(s)
-        return np.array(x)
-
-    def __minimize(self, f, start, bounds, N=1000):
-        x, y = start, f(start)
-
-        assert (abs(f(x) - y) <= epsilon_f)
-
-        def compare(x, y, xx):
-            yy = f(xx)
-            if yy <= y:
-                return xx, yy
-            return x, y
-
-        for _ in range(N):
-            np.random.seed(seed)
-            xx = [np.random.uniform(inter[0], inter[1]) for inter in bounds]
-            x, y = compare(x, y, xx)
-
-        assert (abs(f(x) - y) < epsilon_f)
-
-        r = minimize(f, x, bounds=bounds)
-        x, y = compare(x, y, r['x'])
-
-        assert (abs(f(x) - y) < epsilon_f)
-
-        return x, y
-
-    def __maximize(self, f, start, bounds, N=1000):
-
-        def new_f(x):
-            return - f(x)
-
-        x, y = self.__minimize(new_f, start, bounds, N=N)
-        return x, -y
-
-    def __description(self, S):
-        print("This sequence of sets:", S)
-        y = [s[self.i] for s in S]
-        for i in range(len(S) - 1):
-            print(str(S[i]) + " -> " + str(y[i+1]))
-
-    def __findInterval(self, a_tilde, b_tilde, p, mu=0, sigma=1):
-
-        ssigma = sqrt(sigma)
-
-        def cdf(x):
-            return norm.cdf(x, mu, ssigma)
-
-        def ppf(pp):
-            return norm.ppf(pp, mu, ssigma)
-
-        p_tilde = cdf(b_tilde) - cdf(a_tilde)
-        if p_tilde >= p:
-            return [a_tilde, b_tilde]
-
-        da = abs(mu - a_tilde)
-        db = abs(b_tilde - mu)
-        delta = max(da, db)
-        if cdf(mu + delta) - cdf(mu - delta) >= p:
-            if da < db:
-                return [ppf(cdf(b_tilde) - p), b_tilde]
-            return [a_tilde, ppf(p + cdf(a_tilde))]
-
-        return [ppf(0.5 * (1 - p)), ppf(0.5 * (1 + p))]

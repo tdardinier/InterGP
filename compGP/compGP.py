@@ -11,6 +11,8 @@ class CompGP:
 
         self.GPs = [GP(k, i, n, m, debug=debug, scipy=scipy) for i in range(n)]
 
+        self.riskAllocUniform = False
+
     def fit(self, X, U, Y):
         # X = [X_0, ..., X_{N-1}]
         # U = [U_0, ..., U_{N-1}]
@@ -75,6 +77,18 @@ class CompGP:
 
         return p
 
+    def computeProbTraj(self, S, U):
+        p = 1.
+        P, SS, UU = [], [], []
+
+        for i in range(len(S) - 1):
+            UU.append(U[i])
+            SS.append(S[i])
+            P.append(self.computeNextProb(SS, UU, S[i+1]))
+            p *= P[-1]
+
+        return p, P
+
     def synthesizeSets(self, x_0, U, k, p):
         # x_0 = [x_0^1, ..., x_0^n]
 
@@ -85,11 +99,14 @@ class CompGP:
         cum_p = 1.
 
         for i in range(k):
-            if i == k - 1:
-                pp = p / cum_p
+            if self.riskAllocUniform:
+                pp = (p / cum_p) ** (1. / (k - i))
             else:
-                pp = (p / cum_p) ** (.7)
-            # pp = (p / cum_p) ** (1. / (k - i))
+                if i == k - 1:
+                    pp = p / cum_p
+                else:
+                    pp = (p / cum_p) ** (.5)
+            pp = min(pp, 0.99999)
             print("-" * 80)
             print("Step", i+1)
             UU.append(U[i])
@@ -99,6 +116,7 @@ class CompGP:
             print("Aim:", pp, ", real:", probs[-1], ", cumulative", cum_p)
             SS.append(s)
 
+        print()
         print("Total prob", cum_p, ", ", probs)
 
-        return SS[1:], probs
+        return SS, probs
