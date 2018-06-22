@@ -115,6 +115,11 @@ def getResults(
     return result.Result(filename=f)
 
 
+def reachabilityReacher():
+    r = getResults(env=d.reacher, c=200)
+
+
+
 # def trainModelDeepQ(env_wrapper, aim=499):
 #
 #     def callback(lcl, _glb):

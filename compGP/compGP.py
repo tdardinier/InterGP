@@ -12,6 +12,7 @@ class CompGP:
         self.GPs = [GP(k, i, n, m, debug=debug, scipy=scipy) for i in range(n)]
 
         self.riskAllocUniform = False
+        self.probTransition = True
 
     def fit(self, X, U, Y):
         # X = [X_0, ..., X_{N-1}]
@@ -106,6 +107,8 @@ class CompGP:
                     pp = p / cum_p
                 else:
                     pp = (p / cum_p) ** (.5)
+            if self.probTransition:
+                pp = p
             pp = min(pp, 0.99999)
             print("-" * 80)
             print("Step", i+1)
