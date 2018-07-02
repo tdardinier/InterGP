@@ -1,7 +1,7 @@
 import numpy as np
-from interval_matrix import InterMatrix
-from interval import Interval as In
-from function import square, exp
+from oldInterGP.interval_matrix import InterMatrix
+from oldInterGP.interval import Interval as In
+from oldInterGP.function import square, exp
 
 
 # x : n * 1, y : n * 1

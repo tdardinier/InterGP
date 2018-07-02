@@ -1,5 +1,5 @@
 import numpy as np
-from interval import Interval
+from oldInterGP.interval import Interval
 
 
 class InterMatrix:

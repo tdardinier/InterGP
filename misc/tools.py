@@ -1,9 +1,6 @@
 import math
 import random as rd
 import scipy.linalg
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-# from sklearn.gaussian_process.kernels import Matern, ConstantKernel
 import numpy as np
 
 
@@ -87,42 +84,35 @@ class Quantizer():
 class FileNaming():
 
     @staticmethod
+    def __assembly(folder, liste, suffix):
+        return folder + "_".join(liste) + suffix
+
+    @staticmethod
+    def trajName(env_name, agent_name, c, p, conf):
+        folder = "trajs" + "/"
+        suffix = ".npy"
+        liste = [env_name, agent_name, str(c), str(p)]
+        liste += conf.getListe()
+        return FileNaming.__assembly(folder, liste, suffix)
+
+    @staticmethod
     def replayName(env_name, agent_name):
         folder = "replays" + "/"
         suffix = ".npy"
-        return folder + env_name + "_" + agent_name + suffix
+        return FileNaming.__assembly(folder, [env_name, agent_name], suffix)
 
     @staticmethod
     def resultName(predictor_name, env_name, agent_name, c):
         folder = "results" + "/"
         suffix = ".npz"
-        return folder + predictor_name + "_" + env_name + \
-            "_" + agent_name + "_" + str(c) + suffix
+        liste = [predictor_name, env_name, agent_name, str(c)]
+        return FileNaming.__assembly(folder, liste, suffix)
 
     @staticmethod
     def modelName(env_wrapper):
         folder = "models" + "/"
         suffix = ".pkl"
-        return folder + env_wrapper.name + suffix
-
-
-class GaussianProcesses():
-
-    def __init__(self):
-        self.kernel = C(1.0, (1e-3, 1e3)) * RBF(1, (1e-2, 1e2))
-        # self.kernel = Matern(length_scale=2, nu=3/2)
-
-    def train(self, X, Y):
-        self.gp = GaussianProcessRegressor(
-            # kernel=self.kernel, n_restarts_optimizer=9, normalize_y=True)
-            kernel=self.kernel, n_restarts_optimizer=9)
-        self.gp.fit(X, Y)
-
-    def predictCov(self, x):
-        return self.gp.predict(x, return_cov=True)
-
-    def predict(self, x):
-        return self.gp.predict(x, return_std=True)
+        return FileNaming.__assembly(folder, [env_wrapper.name], suffix)
 
 
 class Normalizer():

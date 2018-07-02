@@ -1,8 +1,6 @@
-# from predictors import gaussianProcesses, linearPredictor, \
-#    fullPredictor, identity
-from predictors import gaussianProcesses, \
-    identity
-# from agents import random, deepQ
+from predictors import gaussianProcesses, identity
+from predictors import fullPredictor, linearPredictor
+# SLOW: from agents import deepQ
 from agents import random
 import gym
 
@@ -69,24 +67,28 @@ owned.append(reacher)
 
 hard = list(set(classic_control + mujoco) - set(owned))
 
-# linear_predictor = PredictorWrapper(linearPredictor.Predictor, "linearNN")
-# full_predictor = PredictorWrapper(fullPredictor.Predictor, "fullNN")
+linear_predictor = PredictorWrapper(linearPredictor.Predictor, "linearNN")
+full_predictor = PredictorWrapper(fullPredictor.Predictor, "fullNN")
 gp = PredictorWrapper(gaussianProcesses.Predictor, "GP")
-ngp = PredictorWrapper(gaussianProcesses.Predictor, "NGP")
-fngp = PredictorWrapper(gaussianProcesses.Predictor, "FNGP")
 id_predictor = PredictorWrapper(identity.Predictor, "identity")
 
-# predictors = [linear_predictor, full_predictor, gp, id_predictor]
-predictors = [gp, id_predictor]
+predictors = [linear_predictor, full_predictor, gp, id_predictor]
 
 agent_random = AgentWrapper(random.Random, "random")
 agent_acktr = AgentWrapper(None, "acktr")
-# deepq = AgentWrapper(deepQ.DeepQ, "deepQ")
-deepq = AgentWrapper(None, "deepQ")
+# SLOW: deepq = AgentWrapper(deepQ.DeepQ, "deepQ")
 
 default_n_steps = 20000
-default_c = 100
+default_c = 200
+default_k = 5
+default_p = 0.9
 default_render = False
+default_density = False
+
 default_agent = agent_random
 default_predictor = gp
 default_env = cartpole
+
+default_envs = classic_control
+default_agents = [default_agent]
+default_cs = [default_c]

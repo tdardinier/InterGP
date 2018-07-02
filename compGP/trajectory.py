@@ -3,11 +3,12 @@ import numpy as np
 
 class Trajectory:
 
-    def __init__(self, S, P, buf):
+    def __init__(self, S=[], P=[], buf=None):
 
-        self.S = S
-        self.P = [1.] + P
-        self.X = [buf.x[i] for i in range(len(S))]
+        if buf is not None:
+            self.S = S
+            self.P = [1.] + P
+            self.X = [buf.x[i] for i in range(len(S))]
 
     def __log(self, s):
         print("Trajectory: " + s)

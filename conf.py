@@ -11,6 +11,7 @@ class Conf:
                  noise=False,               # add noise to the kernel if scipy
                  riskAllocUniform=False,    # how to allocate risk
                  probTransition=True,       # prob given is total/transition
+                 seed=42,                   # random seed
                  ):
 
         self.k = k
@@ -23,3 +24,22 @@ class Conf:
         self.noise = noise
         self.riskAllocUniform = riskAllocUniform
         self.probTransition = probTransition
+        self.seed = seed
+
+    def getListe(self):
+
+        liste = []
+
+        def strBool(b, s=""):
+            if b:
+                return s + "1"
+            return s + "0"
+
+        liste.append(strBool(self.scipy, "sci"))
+        liste.append(strBool(self.centered, "cen"))
+        liste.append(strBool(self.matern, "mat"))
+        liste.append(strBool(self.noise, "noi"))
+        liste.append(strBool(self.riskAllocUniform, "unif"))
+        liste.append(strBool(self.probTransition, "trans"))
+
+        return liste

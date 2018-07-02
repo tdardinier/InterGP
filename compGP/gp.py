@@ -2,24 +2,23 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import norm
 from math import sqrt
-from main.coreGP import CoreGP
+from misc.coreGP import CoreGP
 
 epsilon = 0.00000000000001
 epsilon_f = 0.000001
-seed = 42
 
 
 class GP:
 
     def __noisifyMatrix(self, M):
-        np.random.seed(seed)
+        np.random.seed(self.seed)
         n, m = M.shape
         r = np.matrix([[np.random.rand() for _ in range(m)] for _ in range(n)])
         r *= epsilon
         return M + r
 
     def __normalizeSigma(self, sigma):
-        np.random.seed(seed)
+        np.random.seed(self.seed)
         if sigma < 0.1 * epsilon:
             if self.debug:
                 print("ALERT: SMALL SIGMA", sigma)
@@ -41,6 +40,7 @@ class GP:
 
         self.centered = conf.centered
 
+        self.seed = conf.seed
         self.debug = conf.debug
 
     def fit(self, X, Y):
@@ -114,7 +114,8 @@ class GP:
     def __probInter(self, mu=0, sigma=1, inter=[-1.96, 1.96]):
         if self.debug:
             print("prob", mu, sigma, inter)
-        return norm.cdf(inter[1], mu, sqrt(sigma)) - norm.cdf(inter[0], mu, sqrt(sigma))
+        ssigma = sqrt(sigma)
+        return norm.cdf(inter[1], mu, ssigma) - norm.cdf(inter[0], mu, ssigma)
 
     def __extractMuSigma(self, xs):
         # xs = [x_0, ..., x_{k-1}]
@@ -202,7 +203,7 @@ class GP:
         return np.array(x)
 
     def __sampleExtremities(self, bounds, n_iter=1000):
-        np.random.seed(42)
+        np.random.seed(self.seed)
 
         if n_iter == 0:
             return []
@@ -221,7 +222,7 @@ class GP:
         return tail
 
     def __minimize(self, f, start, bounds, maxiter=100):
-        np.random.seed(42)
+        np.random.seed(self.seed)
 
         x, y = start, f(start)
 
@@ -241,7 +242,7 @@ class GP:
         assert (abs(f(x) - y) <= epsilon_f)
 
         for _ in range(maxiter):
-            np.random.seed(seed)
+            np.random.seed(self.seed)
             xx = [np.random.uniform(inter[0], inter[1]) for inter in bounds]
             x, y = compare(x, y, xx)
 
@@ -378,5 +379,3 @@ class GP:
             return p
 
         return f, approx_f
-
-

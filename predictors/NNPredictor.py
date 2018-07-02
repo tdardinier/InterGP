@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import random as rd
-import predictor
+from misc import predictor
 import math
 
 nrd = np.random

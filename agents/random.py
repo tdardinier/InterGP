@@ -1,4 +1,4 @@
-import agent
+from misc import agent
 
 
 class Random(agent.Agent):

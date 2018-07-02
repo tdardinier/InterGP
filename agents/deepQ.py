@@ -1,6 +1,5 @@
-import agent
+from misc import agent
 from baselines import deepq
-import tensorflow as tf
 
 
 class DeepQ(agent.Agent):

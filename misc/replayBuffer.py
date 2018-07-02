@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import random as rd
-import tools
+from misc import tools
 
 
 class ReplayBuffer():

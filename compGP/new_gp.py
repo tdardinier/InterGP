@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import norm
-from tools import GaussianProcesses as SCGP
+from misc.tools import GaussianProcesses as SCGP
 from math import sqrt
 
 

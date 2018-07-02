@@ -1,7 +1,7 @@
 import numpy as np
-from result import Result
+from misc.result import Result
 # from replayBuffer import ReplayBuffer
-import tools
+from misc import tools
 import matplotlib.pyplot as plt
 import math
 from scipy.stats import norm
@@ -140,58 +140,43 @@ class Visualisator():
             prev_y2 = y
             for j in range(len(p)):
                 color = cmap(float(j) / len(p))
-                plt.fill_between(x, prev_y1, y1[j], alpha=0.5, color=color,
+
+                aa = 0
+                bb = 21
+                plt.fill_between(x[aa:bb], prev_y1[aa:bb], y1[j][aa:bb], alpha=0.5, color=color,
                                  label="Confidence interval at " +
                                  str(int(p[j] * 100)) + "%")
-                plt.fill_between(x, prev_y2, y2[j], alpha=0.5, color=color)
+
+                aa = 21
+                bb = 41
+                plt.fill_between(x[aa:bb], prev_y1[aa:bb], y1[j][aa:bb], alpha=0.5, color=color)
+
+                aa = 41
+                bb = 100
+                plt.fill_between(x[aa:bb], prev_y1[aa:bb], y1[j][aa:bb], alpha=0.5, color=color)
+
+                aa = 0
+                bb = 21
+                plt.fill_between(x[aa:bb], prev_y2[aa:bb], y2[j][aa:bb], alpha=0.5, color=color)
+
+                aa = 21
+                bb = 41
+                plt.fill_between(x[aa:bb], prev_y2[aa:bb], y2[j][aa:bb], alpha=0.5, color=color)
+
+                aa = 41
+                bb = 100
+                plt.fill_between(x[aa:bb], prev_y2[aa:bb], y2[j][aa:bb], alpha=0.5, color=color)
+
+
+
+
                 prev_y1, prev_y2 = y1[j], y2[j]
 
-            plt.plot(x, y, label="Estimated state")
+            plt.plot(x[:21], y[:21], label="Estimated state", color="#333333")
+            plt.plot(x[21:41], y[21:41], color="#333333")
+            plt.plot(x[41:], y[41:], color="#333333")
             plt.scatter(x, ry, label="Real state", color="black")
 
             if ii == 0:
                 plt.legend(loc=loc)
-        self.__fullScreen()
-
-    def plotCompGP(self,
-                   traj,
-                   color='#0088FF',
-                   name="Test",
-                   components=None,
-                   loc="upper left",
-                   ):
-
-        if components is None:
-            components = list(range(len(traj.X[0])))
-
-        n_components = len(components) + 1
-
-        plt.subplots(nrows=n_components, ncols=1)
-        for ii in range(len(components)):
-            i = components[ii]
-            plt.subplot(n_components, 1, ii+1)
-            s = name
-            s += ", dimension " + str(i)
-            plt.title(s)
-            x = []
-            y = []
-            y1 = []
-            y2 = []
-
-            for t in range(len(traj.S)):
-                x.append(t)
-                y.append(traj.X[t].item(i))
-                y1.append(traj.S[t][i][0])
-                y2.append(traj.S[t][i][1])
-
-            # color = 'blue'
-            plt.fill_between(x, y1, y2, color=color, label="Approximation")
-            plt.plot(x, y, label="Real state", color='black')
-
-            if ii == 0:
-                plt.legend(loc=loc)
-
-        plt.subplot(n_components, 1, n_components)
-        plt.fill_between(x, traj.P, label='Probability')
-
         self.__fullScreen()

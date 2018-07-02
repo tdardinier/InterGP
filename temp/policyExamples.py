@@ -1,6 +1,6 @@
 import gym
-from agents import linear
-import controller as ctrl
+from misc.agents import linear
+import misc.controller as ctrl
 import numpy as np
 import random as rd
 

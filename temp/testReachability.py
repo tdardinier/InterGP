@@ -1,11 +1,10 @@
-import definitions as d
-import tools
-import replayBuffer
+import misc.definitions as d
+from misc import tools, replayBuffer
 from compGP.compGP import CompGP
 import numpy as np
-from visualisator import Visualisator
-from main.trajectory import Trajectory
-from compGP.conf import Conf
+from misc.visualisator import Visualisator
+from compGP.trajectory import Trajectory
+from conf import Conf
 
 
 def getReplayBuffer(env=d.default_env, agent=d.default_agent):

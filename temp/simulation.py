@@ -1,6 +1,6 @@
 import gym
-import controller as ctrl
-from agents import learning, linear
+import misc.controller as ctrl
+from misc.agents import learning, linear
 import matplotlib.pyplot as plt
 
 env = gym.make('CartPole-v0')

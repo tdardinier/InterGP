@@ -3,11 +3,15 @@ from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from sklearn.gaussian_process.kernels import WhiteKernel
 from sklearn.gaussian_process.kernels import Matern
 import numpy as np
+from conf import Conf
 
 
 class CoreGP():
 
-    def __init__(self, conf):
+    def __init__(self, conf=None):
+
+        if conf is None:
+            conf = Conf()
 
         self.scipy = conf.scipy
 

@@ -1,5 +1,5 @@
 import random as rd
-import tools
+from misc import tools
 
 
 class Stats():

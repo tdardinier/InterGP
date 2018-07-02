@@ -1,5 +1,6 @@
 import numpy as np
-import agent
+from misc import agent
+
 
 class LearningLinearAgent(agent.Agent):
     def __init__(self):

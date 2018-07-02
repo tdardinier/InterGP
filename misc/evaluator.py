@@ -1,6 +1,6 @@
-import replayBuffer as rb
-import result as rs
-import tools
+from misc import replayBuffer as rb
+from misc import result as rs
+from misc import tools
 import numpy as np
 
 

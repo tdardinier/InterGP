@@ -1,15 +1,14 @@
-import predictor
+from misc import predictor
 import numpy as np
 # from matplotlib import pyplot as plt
-import tools
-from main.coreGP import CoreGP
+from misc.coreGP import CoreGP
 
 
 class Predictor(predictor.Predictor):
 
     def __init__(self, n=4, m=1):
         super().__init__(n, m)
-        self.name = "FNGP"
+        self.name = "GP"
         self.std = True
         self.separated = True
         self.n = n

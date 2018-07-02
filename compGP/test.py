@@ -1,7 +1,7 @@
 from compGP.gp import GP
 import numpy as np
 from compGP.compGP import CompGP
-import tools
+from misc import tools
 
 
 # x : n * 1, y : n * 1

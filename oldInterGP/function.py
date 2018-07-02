@@ -1,4 +1,4 @@
-from interval import Interval
+from oldInterGP.interval import Interval
 import numpy as np
 
 

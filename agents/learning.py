@@ -1,18 +1,21 @@
 import random as rd
-import agent
-import tools
+from misc import agent, tools
 from enum import Enum
+import numpy as np
+
 
 class ExplorationType(Enum):
     OPTIMAL = 0
     EPSILON = 1
     SOFTMAX = 2
 
+
 class LearningType(Enum):
     NOLEARNING = 0
     QLEARNING = 1
     #SARSA = 2
     MONTECARLO = 3
+
 
 class LearningAgent(agent.Agent):
 
@@ -102,4 +105,3 @@ class LearningAgent(agent.Agent):
                 self.q[self.prev_s][self.prev_a] = (1 - self.alpha) * self.q[self.prev_s][self.prev_a] + self.alpha * reward
             else:
                 self.q[self.prev_s][self.prev_a] = (1 - self.alpha) * self.q[self.prev_s][self.prev_a] + self.alpha * (reward + self.gamma * max(self.q[s]))
-

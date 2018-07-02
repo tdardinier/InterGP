@@ -1,7 +1,6 @@
 import numpy as np
-import agent
-import replayBuffer as rb
-import tools
+from misc import agent, tools
+import misc.replayBuffer as rb
 
 
 class ModelWrapper(agent.Agent):

@@ -1,7 +1,6 @@
 import numpy as np
-import agent
 import random as rd
-import tools
+from misc import agent, tools
 
 
 def default_convert_control(u):

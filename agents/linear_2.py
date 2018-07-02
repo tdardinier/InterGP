@@ -1,7 +1,6 @@
 import numpy as np
-import agent
+from misc import agent, tools
 import math
-import tools
 import random as rd
 
 

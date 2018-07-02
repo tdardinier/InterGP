@@ -1,5 +1,5 @@
 import numpy as np
-import agent
+from misc import agent
 import random as rd
 import math
 

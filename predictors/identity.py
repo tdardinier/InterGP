@@ -1,4 +1,4 @@
-import predictor
+from misc import predictor
 
 
 class Predictor(predictor.Predictor):
