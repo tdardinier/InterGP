@@ -1,5 +1,5 @@
 __pycache__
 baselines
-replays
-results
+replays/*
+results/*
 *.pyc
