@@ -71,9 +71,9 @@ class ReplayBuffer():
         return ReplayBuffer(x=x, u=u, y=y)
 
     def cut(self, n):
-        x = self.x[-n:]
-        u = self.u[-n:]
-        y = self.y[-n:]
+        x = self.x[:n]
+        u = self.u[:n]
+        y = self.y[:n]
         return ReplayBuffer(x=x, u=u, y=y)
 
     def addData(self, x, u, y):

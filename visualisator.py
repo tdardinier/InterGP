@@ -152,3 +152,46 @@ class Visualisator():
             if ii == 0:
                 plt.legend(loc=loc)
         self.__fullScreen()
+
+    def plotCompGP(self,
+                   traj,
+                   color='#0088FF',
+                   name="Test",
+                   components=None,
+                   loc="upper left",
+                   ):
+
+        if components is None:
+            components = list(range(len(traj.X[0])))
+
+        n_components = len(components) + 1
+
+        plt.subplots(nrows=n_components, ncols=1)
+        for ii in range(len(components)):
+            i = components[ii]
+            plt.subplot(n_components, 1, ii+1)
+            s = name
+            s += ", dimension " + str(i)
+            plt.title(s)
+            x = []
+            y = []
+            y1 = []
+            y2 = []
+
+            for t in range(len(traj.S)):
+                x.append(t)
+                y.append(traj.X[t].item(i))
+                y1.append(traj.S[t][i][0])
+                y2.append(traj.S[t][i][1])
+
+            # color = 'blue'
+            plt.fill_between(x, y1, y2, color=color, label="Approximation")
+            plt.plot(x, y, label="Real state", color='black')
+
+            if ii == 0:
+                plt.legend(loc=loc)
+
+        plt.subplot(n_components, 1, n_components)
+        plt.fill_between(x, traj.P, label='Probability')
+
+        self.__fullScreen()

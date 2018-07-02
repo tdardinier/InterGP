@@ -4,15 +4,15 @@ from copy import deepcopy
 
 class CompGP:
 
-    def __init__(self, k, n, m=1, debug=False, scipy=False):
+    def __init__(self, conf):
 
-        self.n = n
-        self.m = m
+        self.n = conf.n
+        self.m = conf.m
 
-        self.GPs = [GP(k, i, n, m, debug=debug, scipy=scipy) for i in range(n)]
+        self.GPs = [GP(conf, i) for i in range(conf.n)]
 
-        self.riskAllocUniform = False
-        self.probTransition = True
+        self.riskAllocUniform = conf.riskAllocUniform
+        self.probTransition = conf.probTransition
 
     def fit(self, X, U, Y):
         # X = [X_0, ..., X_{N-1}]

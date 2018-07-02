@@ -3,6 +3,9 @@ import tools
 import replayBuffer
 from compGP.compGP import CompGP
 import numpy as np
+from visualisator import Visualisator
+from main.trajectory import Trajectory
+from compGP.conf import Conf
 
 
 def getReplayBuffer(env=d.default_env, agent=d.default_agent):
@@ -18,13 +21,12 @@ def test(c=200, n_test=50, env=d.default_env,
 
     buf = buf.normalize()
 
-    test = buf.slice([(0, c)])
+    test = buf.slice([(0, n_test)])
     train = buf.slice([(n_test, c + n_test)])
 
-    n = len(buf.x[0])
-    m = len(buf.u[0])
+    conf = Conf(n=len(buf.x[0]), m=len(buf.u[0]))
 
-    cgp = CompGP(None, n, m, scipy=True)
+    cgp = CompGP(conf)
 
     def convert(x):
         return list(np.array(x.T)[0])
@@ -39,3 +41,8 @@ def test(c=200, n_test=50, env=d.default_env,
     U = [convert(uu) for uu in test.u]
 
     S, P = cgp.synthesizeSets(x_0, U, k, p)
+
+    return Trajectory(S, P, test)
+
+
+v = Visualisator()

@@ -26,22 +26,22 @@ class GP:
             return (np.random.rand() + 0.1) * epsilon
         return sigma
 
-    def __init__(self, k, i, n, m=1, debug=True, scipy=False):
+    def __init__(self, conf, i):
 
-        self.k = k  # kernel function
+        self.k = conf.k  # kernel function
         self.i = i  # ith component
-        self.n = n  # dimension of state space
-        self.m = m  # dimension of action space
+        self.n = conf.n  # dimension of state space
+        self.m = conf.m  # dimension of action space
 
         self.X = None
         self.Y = None
         self.N = None
 
-        self.gp = CoreGP(scipy=scipy, k=k)
+        self.gp = CoreGP(conf)
 
-        self.centered = False
+        self.centered = conf.centered
 
-        self.debug = debug
+        self.debug = conf.debug
 
     def fit(self, X, Y):
         self.gp.train(X, Y)
@@ -160,6 +160,13 @@ class GP:
             print("small mu sigma", mu, sigma)
 
         # TODO detect epsilon
+        a = SIGMA_22.item(0)
+        b = sigma.item(0)
+        if b > 10 * a:
+            print()
+            print("BIG SIGMA")
+            print(a, '->', b)
+
         return mu.item(0), self.__normalizeSigma(sigma.item(0))
 
     def __unpack(self, xx):

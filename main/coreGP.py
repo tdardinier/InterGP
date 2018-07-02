@@ -7,17 +7,19 @@ import numpy as np
 
 class CoreGP():
 
-    def __init__(self, scipy=True, k=None):
+    def __init__(self, conf):
 
-        self.scipy = scipy
+        self.scipy = conf.scipy
 
         if self.scipy:
             self.kernel = C(1.0, (1e-3, 1e3)) * RBF(1, (1e-2, 1e2))
-            # self.kernel = Matern(length_scale=2, nu=3/2)
-            # self.kernel += WhiteKernel()
+            if conf.matern:
+                self.kernel = Matern(length_scale=2, nu=3/2)
+            if conf.noise:
+                self.kernel += WhiteKernel()
 
         else:
-            self.k = k  # kernel function
+            self.k = conf.k  # kernel function
             self.X = None
             self.Y = None
             self.N = None
