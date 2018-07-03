@@ -12,81 +12,9 @@ from conf import Conf
 # from baselines.acktr.run_mujoco import train
 
 
-def collect_1(
-    env=d.default_env,
-    agent=d.default_agent,
-    n_steps=d.default_n_steps,
-    render=d.default_render,
-):
-    env.make()
-
-    policy = agent.agent(env)
-
-    a = ModelWrapper(env, policy)
-    c = ctrl.Controller(env.env, a)
-    c.run_episodes(n_episodes=None, n_steps=n_steps, render=render)
-
-    env.close()
-
-
-def collectAll(
-    envs=d.default_envs,
-    agents=d.default_agents,
-    n_steps=d.default_n_steps,
-    render=d.default_render,
-):
-    for env in envs:
-        for agent in agents:
-            collect_1(env=env, agent=agent, n_steps=n_steps, render=render)
-
-
-def evaluate_2(
-    predictor=d.default_predictor,
-    agent=d.default_agent,
-    env=d.default_env,
-    c=d.default_c,
-):
-    ev = Evaluator(predictor.predictor, env.name, agent.name)
-    # r = ev.crossValidate(c=c, k=k)
-    r = ev.sampleValidate(c=c)
-    return r
-
-
-def evaluateAll(
-    predictors=d.default_predictors,
-    envs=d.default_envs,
-    agents=d.default_agents,
-    cs=d.default_cs,
-):
-
-    results = []
-    for c in cs:
-        for agent in agents:
-            for env in envs:
-                for predictor in predictors:
-                    print("Main: Evaluating", predictor.name, "in",
-                          env.name, "c =", c)
-                    r = evaluate_2(predictor, agent, env, c)
-                    results.append(r)
-    return results
-
-
-def visualize_3(
-    predictors=d.default_predictors,
-    envs=d.default_envs,
-    agents=d.default_agents,
-    cs=d.default_cs,
-    density=d.default_density,
-):
-
-    v = Visualisator()
-    v.compare(
-        [p.name for p in predictors],
-        envs,
-        [a.name for a in agents],
-        cs,
-        density=density,
-    )
+# ----------------------------------------------------
+# --------------------- GETTERS ----------------------
+# ----------------------------------------------------
 
 
 def getReplayBuffer(
@@ -127,13 +55,65 @@ def getTraj(
     return traj
 
 
-def testReach(
+# ----------------------------------------------------
+# ------------------- SIMPLE STEPS -------------------
+# ----------------------------------------------------
+
+
+def collect_1(
+    env=d.default_env,
+    agent=d.default_agent,
+    n_steps=d.default_n_steps,
+    render=d.default_render,
+):
+    env.make()
+
+    policy = agent.agent(env)
+
+    a = ModelWrapper(env, policy)
+    c = ctrl.Controller(env.env, a)
+    c.run_episodes(n_episodes=None, n_steps=n_steps, render=render)
+
+    env.close()
+
+
+def evaluate_2(
+    predictor=d.default_predictor,
+    agent=d.default_agent,
+    env=d.default_env,
+    c=d.default_c,
+):
+    ev = Evaluator(predictor.predictor, env.name, agent.name)
+    # r = ev.crossValidate(c=c, k=k)
+    r = ev.sampleValidate(c=c)
+    return r
+
+
+def visualizeComp_3(
+    predictors=d.default_predictors,
+    envs=d.default_envs,
+    agents=d.default_agents,
+    cs=d.default_cs,
+    density=d.default_density,
+):
+
+    v = Visualisator()
+    v.compare(
+        [p.name for p in predictors],
+        envs,
+        [a.name for a in agents],
+        cs,
+        density=density,
+    )
+
+
+def synthesize_4(
     c=d.default_c,
     env=d.default_env,
     agent=d.default_agent,
     k=d.default_k,
     p=d.default_p,
-    save=True,
+    save=d.default_save,
 ):
 
     buf = getReplayBuffer(env=env, agent=agent)
@@ -172,7 +152,81 @@ def testReach(
     return traj
 
 
-v = Visualisator()
+def visualizeSets_5(
+    c=d.default_c,
+    env=d.default_env,
+    agent=d.default_agent,
+    k=d.default_k,
+    p=d.default_p,
+    color=d.default_color_sets,
+    components=d.default_components,
+    loc=d.default_loc,
+):
+
+    traj = getTraj(c, env, agent, p)
+    v = Visualisator()
+    names = []
+    names.append(env.name)
+    names.append(agent.name)
+    names.append('c = ' + str(c))
+    name = ', '.join(names)
+    v.plotCompGP(traj, color=color, name=name, components=components, loc=loc)
+
+
+# --------------------------------------------
+# -------------- MULTIPLE STEPS --------------
+# --------------------------------------------
+
+
+def collectAll(
+    envs=d.default_envs,
+    agents=d.default_agents,
+    n_steps=d.default_n_steps,
+    render=d.default_render,
+):
+    for env in envs:
+        for agent in agents:
+            collect_1(env=env, agent=agent, n_steps=n_steps, render=render)
+
+
+def evaluateAll(
+    predictors=d.default_predictors,
+    envs=d.default_envs,
+    agents=d.default_agents,
+    cs=d.default_cs,
+):
+
+    results = []
+    for c in cs:
+        for agent in agents:
+            for env in envs:
+                for predictor in predictors:
+                    print("Main: Evaluating", predictor.name, "in",
+                          env.name, "c =", c)
+                    r = evaluate_2(predictor, agent, env, c)
+                    results.append(r)
+    return results
+
+
+def synthesizeAll(
+    cs=d.default_cs,
+    envs=d.default_envs,
+    agents=d.default_agents,
+    k=d.default_k,
+    ps=d.default_ps,
+    save=d.default_save,
+):
+
+    for c in cs:
+        for agent in agents:
+            for env in envs:
+                for p in ps:
+                    synthesize_4(c, env, agent, k, p, save)
+
+
+# ----------------------------------------------------
+# ----------------------- MISC -----------------------
+# ----------------------------------------------------
 
 
 # def trainModelDeepQ(env_wrapper, aim=499):

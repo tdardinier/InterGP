@@ -5,6 +5,11 @@ from agents import random
 import gym
 
 
+# -------------------------------------------------------
+# ----------------------- CLASSES -----------------------
+# -------------------------------------------------------
+
+
 class EnvWrapper:
 
     def __init__(self, name, n=4, m=1, aim=499):
@@ -33,6 +38,11 @@ class AgentWrapper:
     def __init__(self, agent, name):
         self.agent = agent
         self.name = name
+
+
+# -------------------------------------------------------
+# --------------------- ENVIRONMENTS --------------------
+# -------------------------------------------------------
 
 
 # Classic Control
@@ -67,6 +77,12 @@ owned.append(reacher)
 
 hard = list(set(classic_control + mujoco) - set(owned))
 
+
+# -------------------------------------------------------
+# ---------------- PREDICTORS AND AGENTS ----------------
+# -------------------------------------------------------
+
+
 linear_predictor = PredictorWrapper(linearPredictor.Predictor, "linearNN")
 full_predictor = PredictorWrapper(fullPredictor.Predictor, "fullNN")
 gp = PredictorWrapper(gaussianProcesses.Predictor, "GP")
@@ -78,18 +94,31 @@ agent_random = AgentWrapper(random.Random, "random")
 agent_acktr = AgentWrapper(None, "acktr")
 # SLOW: deepq = AgentWrapper(deepQ.DeepQ, "deepQ")
 
+
+# -------------------------------------------------------
+# ----------------------- DEFAULT -----------------------
+# -------------------------------------------------------
+
+
 default_n_steps = 20000
 default_c = 200
 default_k = 5
 default_p = 0.9
+
 default_render = False
 default_density = False
+default_save = True
+
+default_color_sets = '#0088FF'
+default_components = None
+default_loc = 'upper left'
 
 default_agent = agent_random
 default_predictor = gp
 default_env = cartpole
 
+default_cs = [default_c]
 default_envs = classic_control
 default_agents = [default_agent]
-default_cs = [default_c]
 default_predictors = [default_predictor]
+default_ps = [default_p]
