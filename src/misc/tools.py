@@ -85,7 +85,7 @@ class FileNaming():
 
     @staticmethod
     def __assembly(folder, liste, suffix):
-        return folder + "_".join(liste) + suffix
+        return "data/" + folder + "_".join(liste) + suffix
 
     @staticmethod
     def trajName(env_name, agent_name, c, p, conf):
