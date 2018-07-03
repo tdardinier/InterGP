@@ -53,7 +53,7 @@ def evaluate_2(
 
 
 def evaluateAll(
-    predictors=d.predictors,
+    predictors=d.default_predictors,
     envs=d.default_envs,
     agents=d.default_agents,
     cs=d.default_cs,
@@ -72,7 +72,7 @@ def evaluateAll(
 
 
 def visualize_3(
-    predictors=d.predictors,
+    predictors=d.default_predictors,
     envs=d.default_envs,
     agents=d.default_agents,
     cs=d.default_cs,

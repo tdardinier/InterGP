@@ -92,3 +92,4 @@ default_env = cartpole
 default_envs = classic_control
 default_agents = [default_agent]
 default_cs = [default_c]
+default_predictors = [default_predictor]
