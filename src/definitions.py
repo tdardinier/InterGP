@@ -102,7 +102,8 @@ agent_acktr = AgentWrapper(None, "acktr")
 
 default_n_steps = 20000
 default_c = 200
-default_k = 5
+default_k_prediction = 10
+default_k_visualization = 6
 default_p = 0.9
 
 default_render = False

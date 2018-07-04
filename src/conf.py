@@ -26,20 +26,28 @@ class Conf:
         self.probTransition = probTransition
         self.seed = seed
 
-    def getListe(self):
+        self.descr = []
+        self.descr.append([self.scipy, "Scipy", "sci"])
+        self.descr.append([self.centered, "Centered", "cen"])
+        self.descr.append([self.matern, "Matern", "mat"])
+        self.descr.append([self.noise, "Noise", "noi"])
+        self.descr.append([self.riskAllocUniform, "Risk uniform", "unif"])
+        self.descr.append([self.probTransition, "Prob transition", "trans"])
+
+    def getListe(self, i=2, v='1', f='0'):
 
         liste = []
 
         def strBool(b, s=""):
             if b:
-                return s + "1"
-            return s + "0"
+                return s + v
+            return s + f
 
-        liste.append(strBool(self.scipy, "sci"))
-        liste.append(strBool(self.centered, "cen"))
-        liste.append(strBool(self.matern, "mat"))
-        liste.append(strBool(self.noise, "noi"))
-        liste.append(strBool(self.riskAllocUniform, "unif"))
-        liste.append(strBool(self.probTransition, "trans"))
+        for t in self.descr:
+            liste.append(strBool(t[0], t[i]))
 
         return liste
+
+    def getDescrName(self):
+        liste = self.getListe(1, ': 1', ': 0')
+        return ' - '.join(liste)

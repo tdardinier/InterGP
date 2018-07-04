@@ -142,26 +142,30 @@ class Visualisator():
                    name="Test",
                    components=None,
                    loc="upper left",
+                   k=10,
                    ):
 
         if components is None:
             components = list(range(len(traj.X[0])))
 
+        kk = min(len(traj.S), k + 1)
         n_components = len(components) + 1
 
         plt.subplots(nrows=n_components, ncols=1)
+        plt.title(name)
         for ii in range(len(components)):
             i = components[ii]
             plt.subplot(n_components, 1, ii+1)
-            s = name
-            s += ", dimension " + str(i)
-            plt.title(s)
+            if ii == 0:
+                plt.title(name + "\nDimension " + str(i))
+            else:
+                plt.title("Dimension " + str(i))
             x = []
             y = []
             y1 = []
             y2 = []
 
-            for t in range(len(traj.S)):
+            for t in range(kk):
                 x.append(t)
                 y.append(traj.X[t].item(i))
                 y1.append(traj.S[t][i][0])
@@ -175,6 +179,6 @@ class Visualisator():
                 plt.legend(loc=loc)
 
         plt.subplot(n_components, 1, n_components)
-        plt.fill_between(x, traj.P, label='Probability')
+        plt.fill_between(x, traj.P[:kk], label='Probability')
 
         self.__fullScreen()

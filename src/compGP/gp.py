@@ -168,6 +168,9 @@ class GP:
             print("BIG SIGMA")
             print(a, '->', b)
 
+        if b > 0.1:
+            print("BIG VARIANCE", b)
+
         return mu.item(0), self.__normalizeSigma(sigma.item(0))
 
     def __unpack(self, xx):

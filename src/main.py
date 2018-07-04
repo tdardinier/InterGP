@@ -111,7 +111,7 @@ def synthesize_4(
     c=d.default_c,
     env=d.default_env,
     agent=d.default_agent,
-    k=d.default_k,
+    k=d.default_k_prediction,
     p=d.default_p,
     save=d.default_save,
 ):
@@ -156,21 +156,24 @@ def visualizeSets_5(
     c=d.default_c,
     env=d.default_env,
     agent=d.default_agent,
-    k=d.default_k,
+    k=d.default_k_visualization,
     p=d.default_p,
     color=d.default_color_sets,
     components=d.default_components,
     loc=d.default_loc,
 ):
 
-    traj = getTraj(c, env, agent, p)
+    conf = Conf()
+    traj = getTraj(c, env, agent, p, conf=conf)
     v = Visualisator()
     names = []
     names.append(env.name)
     names.append(agent.name)
     names.append('c = ' + str(c))
     name = ', '.join(names)
-    v.plotCompGP(traj, color=color, name=name, components=components, loc=loc)
+    name += '\n' + conf.getDescrName()
+    v.plotCompGP(traj, color=color, name=name,
+                 components=components, loc=loc, k=k)
 
 
 # --------------------------------------------
@@ -212,7 +215,7 @@ def synthesizeAll(
     cs=d.default_cs,
     envs=d.default_envs,
     agents=d.default_agents,
-    k=d.default_k,
+    k=d.default_k_prediction,
     ps=d.default_ps,
     save=d.default_save,
 ):
