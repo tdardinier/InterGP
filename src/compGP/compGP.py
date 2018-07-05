@@ -1,4 +1,5 @@
 from compGP.gp import GP
+from compGP.trajectory import Trajectory
 from copy import deepcopy
 
 
@@ -69,12 +70,12 @@ class CompGP:
         # U = [U_0, ..., U_{k-1}]
 
         SS = self.__combineSetsStatesActions(S, U)
-        p = 1
+        p = []
 
         for i in range(self.n):
             pp = self.GPs[i].computePik(SS, S_k[i])[2]
             print(str(i) + " -> " + str(pp))
-            p *= pp
+            p.append(pp)
 
         return p
 
@@ -93,33 +94,46 @@ class CompGP:
     def synthesizeSets(self, x_0, U, k, p):
         # x_0 = [x_0^1, ..., x_0^n]
 
+        traj = Trajectory()
+        traj.addStart(x_0)
+        traj.addU(U[:k])
+
         SS = [[(xx, xx) for xx in x_0]]
         UU = []
-        probs = []
 
         cum_p = 1.
 
         for i in range(k):
-            if self.riskAllocUniform:
-                pp = (p / cum_p) ** (1. / (k - i))
-            else:
-                if i == k - 1:
-                    pp = p / cum_p
-                else:
-                    pp = (p / cum_p) ** (.5)
             if self.probTransition:
                 pp = p
-            pp = min(pp, 0.99999)
+            else:
+                cum_p = max(cum_p, p)  # to avoid div by 0
+                if self.riskAllocUniform:
+                    pp = (p / cum_p) ** (1. / (k - i))
+                else:
+                    if i == k - 1:
+                        pp = p / cum_p
+                    else:
+                        pp = (p / cum_p) ** (.5)
+                pp = min(pp, 0.99999)
             print("-" * 80)
             print("Step", i+1)
             UU.append(U[i])
             s = self.synthesizeNextSet(SS, UU, pp)
-            probs.append(self.computeNextProb(SS, UU, s))
-            cum_p *= probs[-1]
-            print("Aim:", pp, ", real:", probs[-1], ", cumulative", cum_p)
+
+            aimedP = [pp ** (1. / self.n) for _ in range(self.n)]
+            realP = self.computeNextProb(SS, UU, s)
+            traj.addPrediction(s, aimedP, realP)
+
+            prob = 1
+            for ppp in realP:
+                prob *= ppp
+            cum_p *= prob
+
+            print("Aim:", pp, ", real:", prob, ", cumulative", cum_p)
             SS.append(s)
 
         print()
-        print("Total prob", cum_p, ", ", probs)
+        print("Total prob", cum_p)
 
-        return SS, probs
+        return traj

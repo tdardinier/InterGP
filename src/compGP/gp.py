@@ -4,33 +4,27 @@ from scipy.stats import norm
 from math import sqrt
 from misc.coreGP import CoreGP
 
-epsilon = 0.00000000000001
-epsilon_f = 0.000001
-
 
 class GP:
 
     def __noisifyMatrix(self, M):
-        np.random.seed(self.seed)
+        np.random.seed(self.conf.seed)
         n, m = M.shape
         r = np.matrix([[np.random.rand() for _ in range(m)] for _ in range(n)])
-        r *= epsilon
+        r *= self.conf.epsilon
         return M + r
 
     def __normalizeSigma(self, sigma):
-        np.random.seed(self.seed)
-        if sigma < 0.1 * epsilon:
-            if self.debug:
+        np.random.seed(self.conf.seed)
+        if sigma < 0.1 * self.conf.epsilon:
+            if self.conf.debug:
                 print("ALERT: SMALL SIGMA", sigma)
-            return (np.random.rand() + 0.1) * epsilon
+            return (np.random.rand() + 0.1) * self.conf.epsilon
         return sigma
 
     def __init__(self, conf, i):
 
-        self.k = conf.k  # kernel function
         self.i = i  # ith component
-        self.n = conf.n  # dimension of state space
-        self.m = conf.m  # dimension of action space
 
         self.X = None
         self.Y = None
@@ -38,10 +32,7 @@ class GP:
 
         self.gp = CoreGP(conf)
 
-        self.centered = conf.centered
-
-        self.seed = conf.seed
-        self.debug = conf.debug
+        self.conf = conf
 
     def fit(self, X, Y):
         self.gp.train(X, Y)
@@ -61,7 +52,7 @@ class GP:
         # xx, yy = self.__minimize(approx_f, start, bounds)
         x, y = self.__minimize(f, start, bounds)
 
-        if self.debug:
+        if self.conf.debug:
             print("bounds", bounds)
             print("inter", inter)
             print("bounds", bounds)
@@ -84,10 +75,10 @@ class GP:
 
         start = self.__startingPointFromSets(S)
         bounds = self.__packSets(S)
-        if self.debug:
+        if self.conf.debug:
             print("synthe: bounds", bounds)
 
-        if self.centered or p < 0.5:
+        if self.conf.centered or p < 0.5:
             m = self.__createM(p, bigM=False)
             M = self.__createM(p, bigM=True)
         else:
@@ -112,7 +103,7 @@ class GP:
         return [a[1], b[1]]
 
     def __probInter(self, mu=0, sigma=1, inter=[-1.96, 1.96]):
-        if self.debug:
+        if self.conf.debug:
             print("prob", mu, sigma, inter)
         ssigma = sqrt(sigma)
         return norm.cdf(inter[1], mu, ssigma) - norm.cdf(inter[0], mu, ssigma)
@@ -126,7 +117,7 @@ class GP:
 
         MU, SIGMA = self.gp.predict(xs, return_cov=True)
 
-        if self.debug:
+        if self.conf.debug:
             print("BIG MU SIGMA", MU, SIGMA)
             print("k", k)
 
@@ -144,7 +135,7 @@ class GP:
         prod = SIGMA_21 * np.linalg.inv(self.__noisifyMatrix(SIGMA_11))
         x = np.matrix([xx[self.i] for xx in xs[1:]]).T
 
-        if self.debug and False:
+        if self.conf.debug and False:
             print("\nMU 2\n", MU_2)
             print("\nSIGMA_21\n", SIGMA_21)
             print("\nSIGMA_11\n", SIGMA_11)
@@ -157,7 +148,7 @@ class GP:
         mu = MU_2 + prod * (x - MU_1)
         sigma = SIGMA_22 - prod * SIGMA_12
 
-        if self.debug:
+        if self.conf.debug:
             print("small mu sigma", mu, sigma)
 
         # TODO detect epsilon
@@ -174,10 +165,10 @@ class GP:
         return mu.item(0), self.__normalizeSigma(sigma.item(0))
 
     def __unpack(self, xx):
-        length = self.n + self.m
+        length = self.conf.n + self.conf.m
         k = len(xx) // length
         x = [[xx[i * length + j] for j in range(length)] for i in range(k)]
-        if self.debug:
+        if self.conf.debug:
             print("UNPACKED", x)
         return x
 
@@ -205,8 +196,8 @@ class GP:
             x += self.__getCenter(s)
         return np.array(x)
 
-    def __sampleExtremities(self, bounds, n_iter=1000):
-        np.random.seed(self.seed)
+    def __sampleExtremities(self, bounds, n_iter):
+        np.random.seed(self.conf.seed)
 
         if n_iter == 0:
             return []
@@ -224,8 +215,8 @@ class GP:
 
         return tail
 
-    def __minimize(self, f, start, bounds, maxiter=100):
-        np.random.seed(self.seed)
+    def __minimize(self, f, start, bounds):
+        np.random.seed(self.conf.seed)
 
         x, y = start, f(start)
 
@@ -235,26 +226,27 @@ class GP:
                 return xx, yy
             return x, y
 
-        assert (abs(f(x) - y) < epsilon_f)
+        # assert (abs(f(x) - y) < self.conf.epsilon_f)
 
-        extremities = self.__sampleExtremities(bounds, n_iter=maxiter)
+        extremities = self.__sampleExtremities(bounds,
+                                               self.conf.max_iter_minimizer)
 
         for xx in extremities:
             x, y = compare(x, y, xx)
 
-        assert (abs(f(x) - y) <= epsilon_f)
+        # assert (abs(f(x) - y) <= self.conf.epsilon_f)
 
-        for _ in range(maxiter):
-            np.random.seed(self.seed)
+        for _ in range(self.conf.max_iter_minimizer):
             xx = [np.random.uniform(inter[0], inter[1]) for inter in bounds]
             x, y = compare(x, y, xx)
 
-        assert (abs(f(x) - y) < epsilon_f)
+        # assert (abs(f(x) - y) < self.conf.epsilon_f)
 
-        r = minimize(f, x, bounds=bounds, options={'maxiter': maxiter})
+        r = minimize(f, x, bounds=bounds,
+                     options={'maxiter': self.conf.max_iter_minimizer})
         x, y = compare(x, y, r['x'])
 
-        assert (abs(f(x) - y) < epsilon_f)
+        # assert (abs(f(x) - y) < self.conf.epsilon_f)
 
         return x, y
 
@@ -366,7 +358,7 @@ class GP:
         def f(packed_xs):
             xs = self.__unpack(packed_xs)
             mu, sigma = self.__extractMuSigma(xs)
-            if self.debug:
+            if self.conf.debug:
                 print("MU, SIGMA", mu, sigma)
             p = self.__probInter(mu, sigma, inter)
             return p
@@ -374,11 +366,11 @@ class GP:
         def approx_f(packed_xs):
             xs = self.__unpack(packed_xs)
             mu, sigma = self.__extractMuSigma(xs)
-            if self.debug:
+            if self.conf.debug:
                 print("MU, SIGMA", mu, sigma)
             p = self.__probInter(mu, sigma, inter)
-            p -= epsilon * ((inter[0] - mu) / sigma) ** 2
-            p -= epsilon * ((inter[1] - mu) / sigma) ** 2
+            p -= self.conf.epsilon * ((inter[0] - mu) / sigma) ** 2
+            p -= self.conf.epsilon * ((inter[1] - mu) / sigma) ** 2
             return p
 
         return f, approx_f

@@ -140,9 +140,8 @@ def synthesize_4(
     x_0 = convert(test.x[0])
     U = [convert(uu) for uu in test.u]
 
-    S, P = cgp.synthesizeSets(x_0, U, k, p)
-
-    traj = Trajectory(S, P, test)
+    traj = cgp.synthesizeSets(x_0, U, k, p)
+    traj.addBuf(test)
 
     if save:
         f = tools.FileNaming.trajName(

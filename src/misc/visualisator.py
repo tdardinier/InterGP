@@ -149,7 +149,7 @@ class Visualisator():
             components = list(range(len(traj.X[0])))
 
         kk = min(len(traj.S), k + 1)
-        n_components = len(components) + 1
+        n_components = len(components)
 
         plt.subplots(nrows=n_components, ncols=1)
         plt.title(name)
@@ -175,10 +175,17 @@ class Visualisator():
             plt.fill_between(x, y1, y2, color=color, label="Approximation")
             plt.plot(x, y, label="Real state", color='black')
 
+            for j in range(kk - 1):
+                xx = j + 0.2
+                yy = max(y2[j], y2[j+1]) + 0.01
+                rp = "{:5.3f}".format(traj.realP[j][i])
+                ap = "{:5.3f}".format(traj.aimedP[j][i])
+                plt.annotate(rp+" ("+ap+")", xy=(xx, yy), xycoords='data')
+
             if ii == 0:
                 plt.legend(loc=loc)
 
-        plt.subplot(n_components, 1, n_components)
-        plt.fill_between(x, traj.P[:kk], label='Probability')
+        # plt.subplot(n_components, 1, n_components)
+        # plt.fill_between(x, traj.P[:kk], label='Probability')
 
         self.__fullScreen()

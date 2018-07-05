@@ -12,6 +12,9 @@ class Conf:
                  riskAllocUniform=False,    # how to allocate risk
                  probTransition=True,       # prob given is total/transition
                  seed=42,                   # random seed
+                 epsilon=0.00000000000001,  # added to make matrices singular
+                 epsilon_f=0.000001,        # assertions for determinism
+                 max_iter_minimizer=200,       # minimizer isn't perfect
                  ):
 
         self.k = k
@@ -25,6 +28,9 @@ class Conf:
         self.riskAllocUniform = riskAllocUniform
         self.probTransition = probTransition
         self.seed = seed
+        self.epsilon = epsilon
+        self.epsilon_f = epsilon_f
+        self.max_iter_minimizer = max_iter_minimizer
 
         self.descr = []
         self.descr.append([self.scipy, "Scipy", "sci"])
