@@ -117,9 +117,9 @@ def synthesize_4(
 ):
 
     buf = getReplayBuffer(env=env, agent=agent)
-    buf = buf.cut(c + k + 1)
-
     buf = buf.normalize()
+
+    buf = buf.cut(c + k + 1)
 
     test = buf.slice([(0, k + 1)])
     train = buf.slice([(k + 1, c + k + 1)])
@@ -152,12 +152,12 @@ def synthesize_4(
 
 
 def visualizeSets_5(
-    c=d.default_c,
+    cs=d.default_cs,
     env=d.default_env,
     agent=d.default_agent,
     k=d.default_k_visualization,
-    p=d.default_p,
-    color=d.default_color_sets,
+    ps=d.default_ps,
+    colors=d.default_colors_sets,
     components=d.default_components,
     loc=d.default_loc,
     show=True,
@@ -167,13 +167,16 @@ def visualizeSets_5(
     if conf is None:
         conf = Conf()
 
-    traj = getTraj(c, env, agent, p, conf=conf)
+    trajs = []
+    for p in ps:
+        for c in cs:
+            trajs.append(getTraj(c, env, agent, p, conf=conf))
     v = Visualisator()
     v.show = show
     name = tools.FileNaming.descrName(env, agent, c, conf)
     filename = tools.FileNaming.imageTrajName(env.name, agent.name,
                                               c, p, conf, k)
-    v.plotCompGP(traj, color=color, name=name, components=components,
+    v.plotCompGP(trajs, colors=colors, name=name, components=components,
                  loc=loc, k=k, filename=filename)
 
 
@@ -232,9 +235,9 @@ def visualizeSetsAll(
     cs=d.default_cs,
     envs=d.default_envs,
     agents=d.default_agents,
-    ks=d.default_ks_visualization,
+    k_max=d.default_k_prediction,
     ps=d.default_ps,
-    color=d.default_color_sets,
+    colors=d.default_colors_sets,
     components=d.default_components,
     loc=d.default_loc,
     show=False,
@@ -245,8 +248,8 @@ def visualizeSetsAll(
         for env in envs:
             for agent in agents:
                 for p in ps:
-                    for k in ks:
-                        visualizeSets_5(c, env, agent, k, p, color,
+                    for k in range(1, k_max + 1):
+                        visualizeSets_5([c], env, agent, k, [p], colors,
                                         components, loc, show, conf)
 
 

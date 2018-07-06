@@ -15,7 +15,7 @@ class Conf:
                  epsilon=1e-20,             # added to make matrices singular
                  epsilon_f=0.000001,        # assertions for determinism
                  max_iter_minimizer=200,    # minimizer isn't perfect
-                 test_chaos_theory=True,   # always constant variance
+                 test_chaos_theory=False,   # always constant variance
                  k_begin_chaos=2,           # when to begin
                  ):
 

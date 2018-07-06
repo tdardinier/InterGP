@@ -110,7 +110,7 @@ default_render = False
 default_density = False
 default_save = True
 
-default_color_sets = '#0088FF'
+default_colors_sets = ['blue', 'red']
 default_components = None
 default_loc = 'upper left'
 
@@ -118,9 +118,8 @@ default_agent = agent_random
 default_predictor = gp
 default_env = cartpole
 
-default_cs = [default_c]
-default_envs = classic_control
+default_cs = [100, 200, 500]
+default_envs = owned
 default_agents = [default_agent]
 default_predictors = [default_predictor]
-default_ps = [default_p]
-default_ks_visualization = [default_k_visualization]
+default_ps = [0.9, 0.95, 0.99]

@@ -17,20 +17,25 @@ class Visualisator():
         delta = y - yy
         return np.linalg.norm(delta, norm)
 
-    def __fullScreen(self, filename="untitled"):
+    def __scale(self):
         mng = plt.get_current_fig_manager()
         mng.full_screen_toggle()
+        if not self.show:
+            figure = plt.gcf()
+            figure.set_size_inches(25, 14)
+
+    def __fullScreen(self, filename="untitled"):
+        self.__scale()
         if self.show:
             print("Showing...")
             plt.show()
         else:
-            print("Showing...")
-            figure = plt.gcf()
-            figure.set_size_inches(25, 14)
+            print("Saving to " + filename + "...")
             directory = os.path.dirname(filename)
             if not os.path.exists(directory):
                 os.makedirs(directory)
             plt.savefig(filename, dpi=100)
+            print("Saved!")
 
     def listNorm(self, r):
         n = []
@@ -147,54 +152,79 @@ class Visualisator():
         self.__fullScreen()
 
     def plotCompGP(self,
-                   traj,
-                   color='#0088FF',
+                   trajs,
+                   colors=['#0088FF', 'blue'],
                    name="Test",
                    components=None,
                    loc="upper left",
                    k=10,
                    filename='untitled',
+                   n_cols=2,
                    ):
+
+        traj = trajs[0]
 
         if components is None:
             components = list(range(len(traj.X[0])))
 
         kk = min(len(traj.S), k + 1)
         n_components = len(components)
+        n_rows = math.ceil(n_components / n_cols)
 
-        plt.subplots(nrows=n_components, ncols=1)
+        plt.subplots(nrows=n_rows, ncols=n_cols)
         plt.title(name)
-        for ii in range(len(components)):
-            i = components[ii]
-            plt.subplot(n_components, 1, ii+1)
-            if ii == 0:
-                plt.title(name + "\nDimension " + str(i))
-            else:
-                plt.title("Dimension " + str(i))
-            x = []
-            y = []
-            y1 = []
-            y2 = []
+        for index in range(len(trajs)):
+            traj = trajs[index]
+            color = colors[index]
+            for ii in range(len(components)):
+                i = components[ii]
+                plt.subplot(n_rows, n_cols, ii+1)
+                if ii == 0:
+                    plt.title(name + "\nDimension " + str(i))
+                else:
+                    plt.title("Dimension " + str(i))
+                x = []
+                y = []
+                y1 = []
+                y2 = []
 
-            for t in range(kk):
-                x.append(t)
-                y.append(traj.X[t].item(i))
-                y1.append(traj.S[t][i][0])
-                y2.append(traj.S[t][i][1])
+                for t in range(kk):
+                    x.append(t)
+                    y.append(traj.X[t].item(i))
+                    y1.append(traj.S[t][i][0])
+                    y2.append(traj.S[t][i][1])
 
-            # color = 'blue'
-            plt.fill_between(x, y1, y2, color=color, label="Approximation")
-            plt.plot(x, y, label="Real state", color='black')
+                # color = 'blue'
+                plt.fill_between(x, y1, y2, color=color,
+                                 label="Approximation", alpha=0.5)
+                plt.plot(x, y, label="Real state", color='black')
 
-            for j in range(kk - 1):
-                xx = j + 0.2
-                yy = max(y2[j], y2[j+1]) + 0.01
-                rp = "{:5.3f}".format(traj.realP[j][i])
-                ap = "{:5.3f}".format(traj.aimedP[j][i])
-                plt.annotate(rp+" ("+ap+")", xy=(xx, yy), xycoords='data')
+                M = max(y)
+                m = min(y)
+                delta = max(M - m, 0.01) * 0.02
 
-            if ii == 0:
-                plt.legend(loc=loc)
+                for j in range(kk - 1):
+
+                    a = 0.2
+                    b = 1 - a
+                    xx = j + a
+                    yy = a * y[j] + b * y[j + 1]
+                    if y[j+1] < y[j]:
+                        yy = b * y[j] + a * y[j + 1]
+                    yy += delta
+                    # yy = 0.5 * (y[j] + y[j+1])
+
+                    rp = "{:3.3f}".format(traj.realP[j][i])
+                    # ap = "{:5.3f}".format(traj.aimedP[j][i])
+                    # s = rp+" ("+ap+")"
+                    s = rp
+                    if s[0] == '0':
+                        s = s[1:]
+
+                    plt.text(xx, yy, s, {}, rotation=0)
+
+                if ii == 0:
+                    plt.legend(loc=loc)
 
         # plt.subplot(n_components, 1, n_components)
         # plt.fill_between(x, traj.P[:kk], label='Probability')
