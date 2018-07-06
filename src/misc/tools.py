@@ -88,11 +88,26 @@ class FileNaming():
         return "data/" + folder + "_".join(liste) + suffix
 
     @staticmethod
+    def __listeTrajName(env_name, agent_name, c, p, conf):
+        liste = [env_name, agent_name, str(c), str(p)]
+        liste += conf.getListe()
+        return liste
+
+    @staticmethod
     def trajName(env_name, agent_name, c, p, conf):
         folder = "trajs" + "/"
         suffix = ".npy"
-        liste = [env_name, agent_name, str(c), str(p)]
-        liste += conf.getListe()
+        liste = FileNaming.__listeTrajName(env_name, agent_name, c, p, conf)
+        return FileNaming.__assembly(folder, liste, suffix)
+
+    @staticmethod
+    def imageTrajName(env_name, agent_name, c, p, conf, k):
+        folder = "images" + "/"
+        suffix = ".png"
+        liste = FileNaming.__listeTrajName(env_name, agent_name, c, p, conf)
+        surfolder = "_".join(liste)
+        folder += surfolder + "/"
+        liste.append(str(k))
         return FileNaming.__assembly(folder, liste, suffix)
 
     @staticmethod
@@ -113,6 +128,16 @@ class FileNaming():
         folder = "models" + "/"
         suffix = ".pkl"
         return FileNaming.__assembly(folder, [env_wrapper.name], suffix)
+
+    @staticmethod
+    def descrName(env, agent, c, conf):
+        names = []
+        names.append(env.name)
+        names.append(agent.name)
+        names.append('c = ' + str(c))
+        name = ', '.join(names)
+        name += '\n' + conf.getDescrName()
+        return name
 
 
 class Normalizer():

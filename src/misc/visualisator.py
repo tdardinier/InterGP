@@ -5,22 +5,32 @@ from misc import tools
 import matplotlib.pyplot as plt
 import math
 from scipy.stats import norm
+import os
 
 
 class Visualisator():
 
-    def __init__(self):
-        pass
+    def __init__(self, show=True):
+        self.show = show
 
     def __normL(self, y, yy, norm=2):
         delta = y - yy
         return np.linalg.norm(delta, norm)
 
-    def __fullScreen(self):
-        print("Showing...")
+    def __fullScreen(self, filename="untitled"):
         mng = plt.get_current_fig_manager()
         mng.full_screen_toggle()
-        plt.show()
+        if self.show:
+            print("Showing...")
+            plt.show()
+        else:
+            print("Showing...")
+            figure = plt.gcf()
+            figure.set_size_inches(25, 14)
+            directory = os.path.dirname(filename)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            plt.savefig(filename, dpi=100)
 
     def listNorm(self, r):
         n = []
@@ -143,6 +153,7 @@ class Visualisator():
                    components=None,
                    loc="upper left",
                    k=10,
+                   filename='untitled',
                    ):
 
         if components is None:
@@ -188,4 +199,4 @@ class Visualisator():
         # plt.subplot(n_components, 1, n_components)
         # plt.fill_between(x, traj.P[:kk], label='Probability')
 
-        self.__fullScreen()
+        self.__fullScreen(filename=filename)

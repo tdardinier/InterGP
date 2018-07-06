@@ -160,19 +160,21 @@ def visualizeSets_5(
     color=d.default_color_sets,
     components=d.default_components,
     loc=d.default_loc,
+    show=True,
+    conf=None,
 ):
 
-    conf = Conf()
+    if conf is None:
+        conf = Conf()
+
     traj = getTraj(c, env, agent, p, conf=conf)
     v = Visualisator()
-    names = []
-    names.append(env.name)
-    names.append(agent.name)
-    names.append('c = ' + str(c))
-    name = ', '.join(names)
-    name += '\n' + conf.getDescrName()
-    v.plotCompGP(traj, color=color, name=name,
-                 components=components, loc=loc, k=k)
+    v.show = show
+    name = tools.FileNaming.descrName(env, agent, c, conf)
+    filename = tools.FileNaming.imageTrajName(env.name, agent.name,
+                                              c, p, conf, k)
+    v.plotCompGP(traj, color=color, name=name, components=components,
+                 loc=loc, k=k, filename=filename)
 
 
 # --------------------------------------------
@@ -226,10 +228,31 @@ def synthesizeAll(
                     synthesize_4(c, env, agent, k, p, save)
 
 
+def visualizeSetsAll(
+    cs=d.default_cs,
+    envs=d.default_envs,
+    agents=d.default_agents,
+    ks=d.default_ks_visualization,
+    ps=d.default_ps,
+    color=d.default_color_sets,
+    components=d.default_components,
+    loc=d.default_loc,
+    show=False,
+    conf=None,
+):
+
+    for c in cs:
+        for env in envs:
+            for agent in agents:
+                for p in ps:
+                    for k in ks:
+                        visualizeSets_5(c, env, agent, k, p, color,
+                                        components, loc, show, conf)
+
+
 # ----------------------------------------------------
 # ----------------------- MISC -----------------------
 # ----------------------------------------------------
-
 
 # def trainModelDeepQ(env_wrapper, aim=499):
 #

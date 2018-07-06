@@ -123,3 +123,4 @@ default_envs = classic_control
 default_agents = [default_agent]
 default_predictors = [default_predictor]
 default_ps = [default_p]
+default_ks_visualization = [default_k_visualization]
