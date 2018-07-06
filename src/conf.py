@@ -12,9 +12,11 @@ class Conf:
                  riskAllocUniform=False,    # how to allocate risk
                  probTransition=True,       # prob given is total/transition
                  seed=42,                   # random seed
-                 epsilon=0.00000000000001,  # added to make matrices singular
+                 epsilon=1e-20,             # added to make matrices singular
                  epsilon_f=0.000001,        # assertions for determinism
-                 max_iter_minimizer=200,       # minimizer isn't perfect
+                 max_iter_minimizer=200,    # minimizer isn't perfect
+                 test_chaos_theory=False,   # always constant variance
+                 k_begin_chaos=2,           # when to begin
                  ):
 
         self.k = k
@@ -31,6 +33,8 @@ class Conf:
         self.epsilon = epsilon
         self.epsilon_f = epsilon_f
         self.max_iter_minimizer = max_iter_minimizer
+        self.test_chaos_theory = test_chaos_theory
+        self.k_begin_chaos = k_begin_chaos
 
         self.descr = []
         self.descr.append([self.scipy, "Scipy", "sci"])
@@ -51,6 +55,12 @@ class Conf:
 
         for t in self.descr:
             liste.append(strBool(t[0], t[i]))
+
+        if self.test_chaos_theory:
+            if i == 1:
+                liste.append("Test chaos" + v)
+            else:
+                liste.append("testChaos")
 
         return liste
 

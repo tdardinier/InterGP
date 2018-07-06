@@ -152,15 +152,18 @@ class GP:
             print("small mu sigma", mu, sigma)
 
         # TODO detect epsilon
-        a = SIGMA_22.item(0)
-        b = sigma.item(0)
-        if b > 10 * a:
-            print()
-            print("BIG SIGMA")
-            print(a, '->', b)
+        # a = SIGMA_22.item(0)
+        # b = sigma.item(0)
+        # if b > 10 * a:
+            # print()
+            # print("BIG SIGMA")
+            # print(a, '->', b)
 
-        if b > 0.1:
-            print("BIG VARIANCE", b)
+        # if b > 0.1:
+            # print("BIG VARIANCE", b)
+
+        if self.conf.test_chaos_theory and k >= self.conf.k_begin_chaos:
+            return mu.item(0), self.conf.epsilon
 
         return mu.item(0), self.__normalizeSigma(sigma.item(0))
 
