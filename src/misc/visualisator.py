@@ -36,6 +36,7 @@ class Visualisator():
                 os.makedirs(directory)
             plt.savefig(filename, dpi=100)
             print("Saved!")
+            plt.clf()
 
     def listNorm(self, r):
         n = []
