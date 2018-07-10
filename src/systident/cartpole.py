@@ -68,6 +68,9 @@ def f(state, action, param):
     return new_state
 
 
+initial_k = 20
+
+
 class Minimizer:
 
     def __init__(self, f=f):
@@ -133,6 +136,7 @@ class Minimizer:
 
     def getDistrib(self, sthetas):
         Mu, Sigma = self.gp.predict(sthetas, return_cov=True)
+        print(Sigma[4])
         r = [(Mu[i], Sigma[i, i]) for i in range(len(sthetas))]
         for i in range(len(sthetas)):
             theta = sthetas[i]
@@ -161,7 +165,7 @@ class Minimizer:
                 return - math.inf
 
         entropic_terms = [entrop(p) for p in P]
-        return sthetas[np.argmax(entropic_terms)]
+        return sthetas[np.argmin(entropic_terms)]
 
     def iterate(self):
         self.trainGP()
@@ -174,7 +178,7 @@ r = main.getReplayBuffer()
 m = Minimizer(f)
 m.addReplayBuffer(r)
 
-for _ in range(20):
+for _ in range(initial_k):
     conf = Param()
     for i in range(len(variables)):
         var = variables[i]
