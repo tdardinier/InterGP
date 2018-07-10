@@ -8,7 +8,7 @@ class DeepQ(agent.Agent):
         self.env_name = env_wrapper.name
         self.env = env_wrapper.env
         self.name = "DeepQ"
-        self.model = deepq.load("models/" + self.env_name + ".pkl")
+        self.model = deepq.load("data/models/" + self.env_name + ".pkl")
 
     def act(self, obs):
         return self.model(obs[None])[0]

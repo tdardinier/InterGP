@@ -114,6 +114,7 @@ def synthesize_4(
     k=d.default_k_prediction,
     p=d.default_p,
     save=d.default_save,
+    test_chaos_theory=False,
 ):
 
     buf = getReplayBuffer(env=env, agent=agent)
@@ -125,6 +126,7 @@ def synthesize_4(
     train = buf.slice([(k + 1, c + k + 1)])
 
     conf = Conf(n=len(buf.x[0]), m=len(buf.u[0]))
+    conf.test_chaos_theory = test_chaos_theory
 
     cgp = CompGP(conf)
 
@@ -162,10 +164,12 @@ def visualizeSets_5(
     loc=d.default_loc,
     show=True,
     conf=None,
+    test_chaos_theory=False,
 ):
 
     if conf is None:
         conf = Conf()
+        conf.test_chaos_theory = test_chaos_theory
 
     trajs = []
     for p in ps:
@@ -222,13 +226,14 @@ def synthesizeAll(
     k=d.default_k_prediction,
     ps=d.default_ps,
     save=d.default_save,
+    test_chaos_theory=False,
 ):
 
     for c in cs:
         for agent in agents:
             for env in envs:
                 for p in ps:
-                    synthesize_4(c, env, agent, k, p, save)
+                    synthesize_4(c, env, agent, k, p, save, test_chaos_theory)
 
 
 def visualizeSetsAll(
@@ -242,6 +247,7 @@ def visualizeSetsAll(
     loc=d.default_loc,
     show=False,
     conf=None,
+    test_chaos_theory=False,
 ):
 
     for c in cs:
@@ -250,7 +256,8 @@ def visualizeSetsAll(
                 for p in ps:
                     for k in range(1, k_max + 1):
                         visualizeSets_5([c], env, agent, k, [p], colors,
-                                        components, loc, show, conf)
+                                        components, loc, show, conf,
+                                        test_chaos_theory)
 
 
 # ----------------------------------------------------
