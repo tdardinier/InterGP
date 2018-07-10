@@ -162,7 +162,7 @@ class Minimizer:
             if p > 0:
                 return p * math.log(p)
             else:
-                return - math.inf
+                return 0
 
         entropic_terms = [entrop(p) for p in P]
         return sthetas[np.argmin(entropic_terms)]
