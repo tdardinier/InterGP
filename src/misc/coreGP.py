@@ -72,3 +72,26 @@ class CoreGP():
             MU = K_star * self.A
             SIGMA = self.__generateMatrixCov(x, x) - K_star * self.B * K_star.T
             return MU, SIGMA
+
+    def preComputeGiven(self, x):
+        self.MU, self.SIGMA = self.predict(x, return_cov=True)
+
+    def predictGiven(self, i, yi):
+
+        k = len(self.MU)
+        l = [j for j in range(k) if j != i]
+
+        MU_1 = self.MU[np.ix_(l)].reshape([k - 1, 1])
+        MU_2 = self.MU[np.ix_([i])]
+
+        SIGMA_11 = self.SIGMA[np.ix_(l, l)]
+        SIGMA_12 = self.SIGMA[np.ix_(l, [i])]
+        SIGMA_21 = self.SIGMA[np.ix_([i], l)]
+        SIGMA_22 = self.SIGMA[np.ix_([i], [i])]
+
+        prod = SIGMA_12 * np.linalg.inv(SIGMA_22)
+
+        mu = MU_1 + prod * (yi - MU_2)
+        sigma = SIGMA_11 - prod * SIGMA_21
+
+        return mu, sigma

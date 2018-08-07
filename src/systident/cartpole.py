@@ -68,14 +68,15 @@ def f(state, action, param):
     return new_state
 
 
-initial_k = 20
+initial_k = 50
 
 
 class Minimizer:
 
     def __init__(self, f=f):
 
-        self.n = 50
+        self.k = 20
+        self.n = 20
         self.m = 3  # for each side
         self.M = self.m ** len(variables)
 
@@ -115,9 +116,11 @@ class Minimizer:
 
     def trainGP(self):
         Y = [self.computeError(r) for r in self.thetas]
-        # print(self.thetas, Y)
-        print('Y', Y)
+        # print('X', self.thetas)
+        # print('Y', Y)
+        print("Training...")
         self.gp.train(self.thetas, Y)
+        print("Trained!")
 
     def sampleThetas(self, confs=[[]], id_variables=[i for i in range(len(variables))]):
         if len(id_variables) == 0:
@@ -134,42 +137,60 @@ class Minimizer:
             new_confs += [conf + [x] for conf in confs]
         return self.sampleThetas(new_confs, q)
 
-    def getDistrib(self, sthetas):
-        Mu, Sigma = self.gp.predict(sthetas, return_cov=True)
-        print(Sigma[4])
-        r = [(Mu[i], Sigma[i, i]) for i in range(len(sthetas))]
-        for i in range(len(sthetas)):
-            theta = sthetas[i]
-            print(theta, self.computeError(theta), r[i])
-        return Mu, Sigma
-
     def sampleErrorThetas(self):
-
-        sthetas = self.sampleThetas()
-        Mu, Sigma = self.getDistrib(sthetas)
-
-        samples = [np.random.multivariate_normal(Mu, Sigma)
-                   for _ in range(self.n)]
-        # samples[n][m ** 2]
-
-        P = [0.0 for _ in range(self.M)]
-        for sample in samples:
-            P[np.argmin(sample)] += 1.
-        P = [p / self.n for p in P]
-        print(P)
 
         def entrop(p):
             if p > 0:
-                return p * math.log(p)
+                return - p * math.log(p)
             else:
                 return 0
 
-        entropic_terms = [entrop(p) for p in P]
-        return sthetas[np.argmin(entropic_terms)]
+        sthetas = self.sampleThetas()
+        future_entropy = []
+
+        self.gp.preComputeGiven(sthetas)
+
+        for i_stheta, stheta in enumerate(sthetas):
+
+            indices = [j for j in range(len(sthetas)) if j != i_stheta]
+            cumulated_entropy = .0
+            mu, sigma = self.gp.predict([stheta], return_cov=True)
+
+            for _ in range(self.k):
+
+                yi = np.random.multivariate_normal(mu, sigma)
+                Mu, Sigma = self.gp.predictGiven(i_stheta, yi)
+                Mu = [x[0] for x in Mu]
+
+                samples = [np.random.multivariate_normal(Mu, Sigma)
+                        for _ in range(self.n)]
+                # samples[n][m ** 2]
+
+                P = [0.0 for _ in range(self.M)]
+                yi = list(yi)
+                for sample in samples:
+                    sample = list(sample)
+                    sample = sample[:i_stheta] + yi + sample[i_stheta:]
+                    P[np.argmin(sample)] += 1.
+                P = [p / self.n for p in P]
+                # print(P)
+
+                for p in P:
+                    cumulated_entropy += entrop(p)
+
+            future_entropy.append(cumulated_entropy)
+
+        for i, c_entropy in enumerate(future_entropy):
+            print(sthetas[i], c_entropy / self.k,
+                  "[" + str(self.gp.MU[i]) + ' +- ' + str(self.gp.SIGMA[i, i]) + "]",
+                  self.computeError(sthetas[i]))
+
+        i = np.argmin(future_entropy)
+        return i, sthetas[i]
 
     def iterate(self):
         self.trainGP()
-        new_theta = self.sampleErrorThetas()
+        i, new_theta = self.sampleErrorThetas()
         print("NEW THETA", new_theta)
         self.thetas.append(new_theta)
 
