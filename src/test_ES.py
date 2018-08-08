@@ -4,7 +4,7 @@ import math as m
 
 
 def f1(x):
-    return (x[0] - 2) ** 2 * (x[1] - 3) ** 2
+    return (x[0] - 2) ** 2 + (x[1] - 3) ** 2
 
 
 bounds1 = [[0, 5], [0, 5]]
