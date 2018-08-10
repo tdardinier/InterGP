@@ -3,108 +3,125 @@ import tensorflow as tf
 import gym
 import numpy as np
 import systident.entropySearch as ES
-
-rtheta = [1.0, 0.1]  # masscart, masspole
-theta = [1.0, 0.1]  # masscart, masspole
+import math
 
 
-def modifyEnv(env, theta):
-    env.masscart = theta[0]
-    env.masspole = theta[1]
+class Problem:
 
+    def __init__(self, name, theta, bounds, properties):
 
-def getPolicy(theta):
-    senv = inter.createEnv()
-    modifyEnv(senv.env.env, theta)
-    tf.initialize_all_variables().run()
-    pi = inter.learn(senv)
-    tf.get_variable_scope().reuse_variables()
-    return pi
+        self.name = name
+        self.theta = theta
+        self.bounds = bounds
 
+        def modifyEnv(env, theta):
+            for i, x in enumerate(properties):
+                setattr(env, x, theta[i])
 
-def collectRealTrajectory(pi):
+        self.modifyEnv = modifyEnv
 
-    env = gym.make('CartPole-v1')
-    observation = env.reset()
-    obs = [observation]
-    actions = []
-    t = 0
-    while True:
-        env.render()
-        act = pi.act(False, observation)[0]
-        observation, reward, done, info = env.step(act)
-        obs.append(observation)
-        actions.append(act)
-        t += 1
-        if done:
-            break
-    print("TOTAL TIME REAL SIMULATION", t)
-    return actions, obs
-
-
-def generateErrorFunction(actions, observations):
-
-    def evaluateError(theta):
-
-        def norm(a, b):
-            return np.linalg.norm(b - a)
-
-        env = gym.make('CartPole-v1')
-        modifyEnv(env.env, theta)
-        s = .0
-
-        for i in range(len(actions)):
-
-            act = actions[i]
-
-            before, after = observations[i], observations[i+1]
+        def setStateFromObs(env, obs):
             env.reset()
-            env.env.state = before
+            env.env.state = obs
 
-            obs, _, _, _ = env.step(act)
-
-            s += norm(obs, after)
-
-        return s
-
-    return evaluateError
+        self.setStateFromObs = setStateFromObs
 
 
-def findMinimum(f, bounds):
-
-    d = len(bounds)
-    es = ES.EntropySearch(d=d, bounds=bounds)
-
-    initial_k = 5
-    for _ in range(initial_k):
-        x = []
-        for j in range(d):
-            a, b = bounds[j]
-            x.append((b - a) * np.random.random() + a)
-        es.addObs(x, f(x))
-
-    current_prob = .0
-    while current_prob < 0.9:
-        x, c_min, current_prob, _ = es.iterate()
-        es.addObs(x, f(x))
-
-    print("Minimum", c_min)
-
-    return es
+cartpole = Problem('CartPole-v1', [3, 1],
+                   [(0.1, 3), (0.01, 0.8)],
+                   ['masscart', 'masspole'])
 
 
-def iterate(current_theta):
+pendulum = Problem('Pendulum-v0', [3, 0.5],
+                   [(0.5, 5), (0.5, 5)],
+                   ['attr_mass', 'attr_length'])
 
-    # Train the policy given our current theta
-    pi = getPolicy(current_theta)
 
-    # Collect real trajectory
-    actions, observations = collectRealTrajectory(pi)
+def setStateFromObs(env, obs):
+    env.reset()
+    cos, sin, thetadot = obs
+    theta = math.atan2(sin, cos)
+    env.env.state = theta, thetadot
 
-    # Create error function
-    f = generateErrorFunction(actions, observations)
-    bounds = [(0.1, 2.), (0.0, 1)]
 
-    es = findMinimum(f, bounds)
+pendulum.setStateFromObs = setStateFromObs
 
-    return es
+
+class ES_TRPO:
+
+    def __init__(self, problem):
+
+        self.pi = None
+        self.actions = None
+        self.observations = None
+
+        self.env_name = problem.name
+        self.modifyEnv = problem.modifyEnv
+        self.setStateFromObs = problem.setStateFromObs
+        self.theta = problem.theta
+        self.bounds = problem.bounds
+        self.es = ES.EntropySearch(self.bounds)
+
+    def findPolicy(self):
+        senv = inter.createEnv(self.env_name)
+        self.modifyEnv(senv.env.env, self.theta)
+        tf.initialize_all_variables().run()
+        self.pi, test = inter.learn(senv)
+        # print("LEARNING")
+        # test.learn_step()
+        tf.get_variable_scope().reuse_variables()
+
+    def collectRealTrajectory(self):
+
+        env = gym.make(self.env_name)
+        observation = env.reset()
+        self.observations = [observation]
+        self.actions = []
+        r = 0
+        while True:
+            env.render()
+            act = self.pi.act(False, observation)[0]
+            observation, reward, done, info = env.step(act)
+            self.observations.append(observation)
+            self.actions.append(act)
+            r += reward
+            if done:
+                break
+        print("TOTAL REWARD REAL SIMULATION", r)
+
+    def generateErrorFunction(self):
+
+        def evaluateError(theta):
+
+            def norm(a, b):
+                return np.linalg.norm(b - a)
+
+            env = gym.make(self.env_name)
+            self.modifyEnv(env.env, theta)
+            s = .0
+
+            for i in range(len(self.actions)):
+
+                act = self.actions[i]
+
+                before, after = self.observations[i], self.observations[i+1]
+
+                self.setStateFromObs(env, before)
+
+                obs, _, _, _ = env.step(act)
+
+                s += norm(obs, after)
+
+            return s
+
+        return evaluateError
+
+    def iterate(self):
+
+        self.findPolicy()
+        self.collectRealTrajectory()
+        f = self.generateErrorFunction()
+
+        c_min, prob, gp = self.es.findMinimum(f)
+
+        return f, c_min, prob, gp

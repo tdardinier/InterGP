@@ -6,15 +6,23 @@ from conf import Conf
 
 class EntropySearch:
 
-    def __init__(self, d=1, bounds=[[0, 1]]):
+    def __init__(self,
+                 bounds,
+                 k=5,
+                 n=5,
+                 m=10,
+                 initial_k=20,
+                 ):
 
-        self.k = 10
-        self.n = 10
-
-        self.m = 11  # for each side
+        self.f = None
         self.bounds = bounds
-        self.dim = d
-        self.M = self.m ** d
+
+        self.k = k
+        self.n = n
+        self.m = m  # for each side
+        self.initial_k = initial_k
+        self.dim = len(bounds)
+        self.M = self.m ** self.dim
 
         self.obs = []
 
@@ -61,11 +69,9 @@ class EntropySearch:
         return [p / n for p in P]
 
     def approximateCurrentDistrib(self):
-
         mu, sigma = self.gp.MU, self.gp.SIGMA
-
         samples = [np.random.multivariate_normal(mu, sigma)
-                   for _ in range(self.n * self.k)]
+                   for _ in range(self.n * 10)]
         return self.computeP(samples)
 
     def approximateEntropyGiven(self, i_stheta, stheta):
@@ -114,7 +120,8 @@ class EntropySearch:
         current_prob = P[i]
 
         print("Current entropy", current_entropy)
-        print("Current minimum", current_min, current_prob)
+        print("Current minimum", current_min, current_prob,
+              self.f(current_min))
 
         for i_stheta, stheta in enumerate(sthetas):
             if i_stheta % 10 == 0:
@@ -133,3 +140,24 @@ class EntropySearch:
         new_theta, c_min, c_prob, c_entropy = self.findBestEntropy()
         print("NEW THETA", new_theta)
         return new_theta, c_min, c_prob, c_entropy
+
+    def findMinimum(self, f):
+
+        self.f = f
+
+        for _ in range(self.initial_k):
+            x = []
+            for j in range(self.dim):
+                a, b = self.bounds[j]
+                x.append((b - a) * np.random.random() + a)
+            self.addObs(x, self.f(x))
+
+        current_prob = .0
+        while current_prob < 0.9:
+            print(self.obs)
+            x, c_min, current_prob, _ = self.iterate()
+            self.addObs(x, self.f(x))
+
+        print("Minimum", c_min)
+
+        return c_min, current_prob, self.gp
