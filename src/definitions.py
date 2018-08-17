@@ -107,12 +107,13 @@ default_k_visualization = 6
 default_p = 0.9
 
 default_render = False
-default_density = False
 default_save = True
 
 default_colors_sets = ['blue', 'red']
 default_components = None
+default_density = False
 default_loc = 'upper left'
+default_bins = 100
 
 default_agent = agent_random
 default_predictor = gp

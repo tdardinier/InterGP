@@ -48,7 +48,8 @@ class Visualisator():
 
     def compare(self,
                 predictors, envs, agent_names,
-                cs, norm=1, density=False):
+                cs, norm=1, density=True,
+                bins=100):
         print(density)
         nrows = 1
         ncols = 1
@@ -84,7 +85,11 @@ class Visualisator():
                         label += " - " + str(int(sum(r.time))) + " s"
                         data.append(n)
                         labels.append(label)
-            plt.hist(data, 100, label=labels, density=density)
+            # for x, lab in zip(data, labels):
+                # plt.hist(x, bins, alpha=alpha, label=lab)
+            plt.hist(data, bins=bins, label=labels, density=density)
+            plt.xlabel('Error (normalized)')
+            plt.ylabel('Number of instances')
             plt.legend(loc='upper right')
         self.__fullScreen()
 

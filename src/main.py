@@ -95,6 +95,7 @@ def visualizeComp_3(
     agents=d.default_agents,
     cs=d.default_cs,
     density=d.default_density,
+    bins=d.default_bins,
 ):
 
     v = Visualisator()
@@ -104,6 +105,7 @@ def visualizeComp_3(
         [a.name for a in agents],
         cs,
         density=density,
+        bins=bins,
     )
 
 
