@@ -1,5 +1,5 @@
-from compGP.gp import GP
-from compGP.trajectory import Trajectory
+from interGP.gp import GP
+from interGP.trajectory import Trajectory
 from copy import deepcopy
 
 

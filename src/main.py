@@ -4,9 +4,9 @@ from misc.evaluator import Evaluator
 from misc.visualisator import Visualisator
 import definitions as d
 from misc import tools, replayBuffer, result
-from compGP.compGP import CompGP
+from interGP.compGP import CompGP
 import numpy as np
-from compGP.trajectory import Trajectory
+from interGP.trajectory import Trajectory
 from conf import Conf
 # from baselines import deepq
 # from baselines.acktr.run_mujoco import train
@@ -261,6 +261,8 @@ def visualizeSetsAll(
                                         components, loc, show, conf,
                                         test_chaos_theory)
 
+
+visualizeSetsAll()
 
 # ----------------------------------------------------
 # ----------------------- MISC -----------------------

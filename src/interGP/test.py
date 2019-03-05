@@ -1,6 +1,6 @@
-from compGP.gp import GP
+from interGP.gp import GP
 import numpy as np
-from compGP.compGP import CompGP
+from interGP.compGP import CompGP
 from misc import tools
 
 
@@ -115,3 +115,5 @@ def testCompGPAll(x=1, noise=0., p=0.95, debug=False, steps=5, scipy=True):
 
     S, probs = cgp.synthesizeSets([x], U, steps, p)
     print(cgp.computeProbTraj(S, U))
+
+testCompGPAll()
