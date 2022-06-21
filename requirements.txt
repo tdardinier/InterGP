@@ -21,7 +21,7 @@ kiwisolver==1.0.1
 Markdown==2.6.11
 matplotlib==2.2.2
 mujoco==2.0.2
-numpy==1.13.3
+numpy==1.22.0
 parso==0.3.0
 pexpect==4.6.0
 pickleshare==0.7.4
